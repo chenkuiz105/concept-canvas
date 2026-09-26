@@ -855,7 +855,10 @@ function renderInsp() {
         <li><b>色塊</b><span><span style="color:var(--co-red-i)">紅</span> 警告禁忌 · <span style="color:var(--co-blue-i)">藍</span> 重點 · <span style="color:var(--co-green-i)">綠</span> 臨床應用 · <span style="color:var(--co-yellow-i)">黃</span> 提示</span></li>
       </ul>
       <hr class="divider">
-      <div class="row"><button class="btn ghost" id="oMd" type="button">匯出 Notion 筆記＋圖片 ZIP</button><button class="btn ghost" id="oJson" type="button">匯出 JSON</button></div>
+      <div class="f"><div class="lbl">匯出</div>
+        <div class="row"><button class="btn" id="oHtml" type="button">匯出 HTML（原樣放進 Notion）</button></div>
+        <p class="note">在 Notion 頁面輸入 <b>/html</b>，選擇 HTML 區塊後上傳這個檔案，畫布就會原樣顯示，可平移、縮放、搜尋、展開摺疊內容。</p>
+        <div class="row"><button class="btn ghost" id="oMd" type="button">匯出 Notion 筆記＋圖片 ZIP</button><button class="btn ghost" id="oJson" type="button">匯出 JSON</button></div></div>
       ${B.example ? '<p class="note">這是範例畫布，任何修改都會自動複製成你自己的畫布。按左側「＋ AI 新畫布」拆解你的資料。</p>' : ''}`;
     $('oLink').onclick = linkify; $('oLink').disabled = !sample || !!busy;
     if ($('oFix')) { $('oFix').onclick = () => runSolo('fix', '補寫遺漏的知識點', sig => fixCoverage(sig)); $('oFix').disabled = !sample || !!busy; }
@@ -863,6 +866,7 @@ function renderInsp() {
     $('oLayout').onclick = () => { if (B.example) forkExample(); autoLayout(); fit(); dirty(); };
     $('oHier').onchange = e => { showHier = e.target.checked; renderEdges(); };
     $('oMd').onclick = exportZip;
+    $('oHtml').onclick = exportHtml;
     $('oJson').onclick = async () => { const d = JSON.parse(JSON.stringify(B)); delete d.example; $('oNote').textContent = await saveFile(safeName(B.title) + '.json', JSON.stringify(d, null, 2)); };
   }
   $('iClose').onclick = () => { if (sel) select(null); else { $('insp').classList.remove('open'); $('app').classList.add('noinsp'); } };
@@ -1417,6 +1421,103 @@ function mdForExport(md, imgs, sec) {
     out.push(inToggle && t ? '    ' + l.replace(/^\s*/, '') : l);
   });
   return out.join('\n');
+}
+/* ---------- export: the canvas as one self-contained HTML file (for Notion's /html block) ---------- */
+async function shrinkToDataURL(url) {
+  if (!url || url.startsWith('data:')) return url;
+  const blob = await (await fetch(url)).blob();
+  let out = blob;
+  if (!/svg/.test(blob.type)) { // keep the file small: re-encode rasters at most 1400px wide
+    try { const bmp = await createImageBitmap(blob); const sc = Math.min(1, 1400 / bmp.width); const cv = document.createElement('canvas'); cv.width = Math.round(bmp.width * sc); cv.height = Math.round(bmp.height * sc);
+      const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(bmp, 0, 0, cv.width, cv.height); bmp.close?.();
+      out = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.84)); } catch {}
+  }
+  return new Promise((ok, bad) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = bad; fr.readAsDataURL(out); });
+}
+// Runs inside the exported file: pan, zoom, pinch, search, click to focus. Must stay self-contained.
+function canvasViewer() {
+  const vp = document.getElementById('vp'), world = document.getElementById('world'), q = document.getElementById('xq'), pct = document.getElementById('xz');
+  const V = {x: 0, y: 0, k: 1};
+  const apply = () => { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; vp.style.backgroundPosition = `${V.x}px ${V.y}px`; vp.style.backgroundSize = `${24 * V.k}px ${24 * V.k}px`; pct.textContent = Math.round(V.k * 100) + '%'; };
+  const nodes = [...world.querySelectorAll('.node')];
+  const box = el => ({x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight});
+  const fit = list => { let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9; (list || nodes).map(box).forEach(b => { x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); });
+    x0 -= 60; y0 -= 90; x1 += 60; y1 += 60; const r = vp.getBoundingClientRect(); const k = Math.max(0.06, Math.min(1.1, r.width / (x1 - x0), r.height / (y1 - y0)));
+    V.k = k; V.x = (r.width - (x1 - x0) * k) / 2 - x0 * k; V.y = (r.height - (y1 - y0) * k) / 2 - y0 * k; apply(); };
+  const zoomAt = (k, cx, cy) => { k = Math.max(0.06, Math.min(2.5, k)); const r = vp.getBoundingClientRect(); const px = (cx ?? r.left + r.width / 2) - r.left, py = (cy ?? r.top + r.height / 2) - r.top; V.x = px - (px - V.x) * k / V.k; V.y = py - (py - V.y) * k / V.k; V.k = k; apply(); };
+  const focus = el => { const b = box(el), r = vp.getBoundingClientRect(); V.k = Math.max(V.k, 0.8); V.x = r.width / 2 - (b.x + b.w / 2) * V.k; V.y = r.height / 2 - (b.y + Math.min(b.h, r.height / V.k * .6) / 2) * V.k; apply();
+    nodes.forEach(n => n.classList.remove('sel')); el.classList.add('sel'); };
+  const ptrs = new Map(); let drag = null, pinch = null;
+  vp.addEventListener('pointerdown', e => {
+    if (e.target.closest('a,summary,.tbl')) return;
+    ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = {d: Math.hypot(a.x - b.x, a.y - b.y), k: V.k}; drag = null; return; }
+    drag = {sx: e.clientX, sy: e.clientY, ox: V.x, oy: V.y, moved: false, node: e.target.closest('.node')}; vp.setPointerCapture(e.pointerId); vp.classList.add('panning');
+  });
+  vp.addEventListener('pointermove', e => {
+    if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+    if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; zoomAt(pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, (a.x + b.x) / 2, (a.y + b.y) / 2); return; }
+    if (!drag) return; const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy; if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+    V.x = drag.ox + dx; V.y = drag.oy + dy; apply();
+  });
+  const end = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!drag) return; const d = drag; drag = null; vp.classList.remove('panning');
+    if (!d.moved) { if (d.node) focus(d.node); else nodes.forEach(n => n.classList.remove('sel')); } };
+  vp.addEventListener('pointerup', end); vp.addEventListener('pointercancel', end);
+  vp.addEventListener('wheel', e => { if (e.target.closest('.tbl')) return; e.preventDefault(); if (e.ctrlKey || e.metaKey) zoomAt(V.k * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY); else { V.x -= e.deltaX; V.y -= e.deltaY; apply(); } }, {passive: false});
+  document.getElementById('xin').onclick = () => zoomAt(V.k * 1.25);
+  document.getElementById('xout').onclick = () => zoomAt(V.k / 1.25);
+  document.getElementById('xfit').onclick = () => fit();
+  let hits = [], hi = 0;
+  q.addEventListener('input', () => { const t = q.value.trim().toLowerCase(); hits = t ? nodes.filter(n => n.textContent.toLowerCase().includes(t)) : []; hi = 0; if (hits[0]) focus(hits[0]); });
+  q.addEventListener('keydown', e => { if (e.key === 'Enter' && hits.length) { hi = (hi + 1) % hits.length; focus(hits[hi]); } });
+  addEventListener('resize', () => fit());
+  requestAnimationFrame(() => fit());
+}
+async function exportHtml() {
+  const note = t => { if ($('oNote')) $('oNote').textContent = t; };
+  note('整理畫布中…');
+  // render a clean snapshot: nothing selected, full card content, then restore the view
+  const keepSel = sel, wasFar = world.classList.contains('far');
+  sel = null; world.classList.remove('far'); renderNodes(); renderSecs(); renderEdges();
+  const clone = world.cloneNode(true);
+  sel = keepSel; if (wasFar) world.classList.add('far'); applyFocus(); renderSecs(); renderEdges();
+  clone.removeAttribute('style');
+  clone.querySelectorAll('.hdl,[data-act],#tmp,.pending').forEach(e => e.remove());
+  clone.querySelectorAll('.node').forEach(n => n.classList.remove('sel', 'dim', 'flash'));
+  clone.querySelectorAll('.el.new').forEach(n => n.classList.remove('new'));
+  const imgs = [...clone.querySelectorAll('img')]; let k = 0;
+  for (const img of imgs) { try { img.src = await shrinkToDataURL(img.getAttribute('src')); } catch { img.closest('figure')?.remove(); } note(`嵌入圖片 ${++k}/${imgs.length}…`); }
+  const css = [...document.querySelectorAll('style')].map(s => s.textContent).join('\n');
+  const viewerCss = `html,body{height:100%}body{margin:0}.xv{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.xv-top{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.xv-top h1{font-family:var(--serif);font-size:18px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:50%}
+.xv-top small{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+.xv-top input{flex:1 1 140px;max-width:260px;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);padding:5px 10px}
+.xv-z{display:flex;gap:4px;align-items:center;margin-left:auto}#xz{font-family:var(--mono);font-size:12px;width:44px;text-align:center;color:var(--ink-2)}
+.vp{min-height:560px}.node{cursor:zoom-in}`;
+  const title = esc(B.title);
+  const html = `<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}｜經緯</title>
+<style>${css}
+${viewerCss}</style>
+</head>
+<body>
+<div class="xv">
+  <header class="xv-top"><h1>${title}</h1><small>經緯 · 知識畫布</small>
+    <input type="search" id="xq" placeholder="搜尋卡片…" aria-label="搜尋卡片">
+    <div class="xv-z"><button class="btn sq" id="xout" type="button" aria-label="縮小">−</button><span id="xz">100%</span><button class="btn sq" id="xin" type="button" aria-label="放大">+</button><button class="btn" id="xfit" type="button">全覽</button></div>
+  </header>
+  <div class="vp" id="vp">${clone.outerHTML}</div>
+</div>
+<script>(${canvasViewer.toString()})();<\/script>
+</body>
+</html>`;
+  const mb = (new Blob([html]).size / 1024 / 1024).toFixed(1);
+  note((await saveFile(safeName(B.title) + '.html', html)) + ` 檔案大小 ${mb} MB。`);
 }
 async function exportZip() {
   const note = t => { if ($('oNote')) $('oNote').textContent = t; };
