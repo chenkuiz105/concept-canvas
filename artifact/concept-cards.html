@@ -1,0 +1,1494 @@
+<meta charset="utf-8">
+<title>概念拆卡機</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap">
+<style>
+:root{
+  --ground:#E9ECEF; --dot:#C9D0D8; --surface:#FFFFFF; --surface-2:#F4F6F8; --side:#F7F8FA; --ink:#1B2430; --ink-2:#465262; --muted:#77828F;
+  --line:#D6DBE1; --line-2:#B4BDC8; --accent:#1F5FAD; --accent-ink:#FFFFFF; --rel:#C2413A;
+  --b1:#0E7A6B; --b2:#1F5FAD; --b3:#9A5806; --b4:#AD3659; --b5:#5A6B24; --b6:#6B4FA3;
+  --co-red:#FBE9E7; --co-red-i:#A3322A; --co-blue:#E6EFFA; --co-blue-i:#1F5FAD; --co-green:#E5F4EC; --co-green-i:#23714A; --co-yellow:#FBF3DC; --co-yellow-i:#8A6200;
+  --ok:#23804A; --bad:#B8392F;
+  --shadow:0 1px 2px rgba(20,30,45,.07),0 4px 14px rgba(20,30,45,.07);
+  --serif:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --sans:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --ground:#12161B; --dot:#27303B; --surface:#1B212A; --surface-2:#232A35; --side:#161B22; --ink:#E5E9EF; --ink-2:#B2BBC7; --muted:#8490A0;
+  --line:#2E3743; --line-2:#4A5767; --accent:#72A9EE; --accent-ink:#0E1620; --rel:#EF7A70;
+  --b1:#3CC1AC; --b2:#72A9EE; --b3:#E1A64B; --b4:#E27595; --b5:#A8BD5E; --b6:#A88DE0;
+  --co-red:#3A2323; --co-red-i:#F2958C; --co-blue:#1E2C3F; --co-blue-i:#8DBBF3; --co-green:#1D3226; --co-green-i:#7FD3A2; --co-yellow:#372F1A; --co-yellow-i:#E8C46A;
+  --ok:#55C07F; --bad:#EF7468; --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#12161B; --dot:#27303B; --surface:#1B212A; --surface-2:#232A35; --side:#161B22; --ink:#E5E9EF; --ink-2:#B2BBC7; --muted:#8490A0;
+  --line:#2E3743; --line-2:#4A5767; --accent:#72A9EE; --accent-ink:#0E1620; --rel:#EF7A70;
+  --b1:#3CC1AC; --b2:#72A9EE; --b3:#E1A64B; --b4:#E27595; --b5:#A8BD5E; --b6:#A88DE0;
+  --co-red:#3A2323; --co-red-i:#F2958C; --co-blue:#1E2C3F; --co-blue-i:#8DBBF3; --co-green:#1D3226; --co-green-i:#7FD3A2; --co-yellow:#372F1A; --co-yellow-i:#E8C46A;
+  --ok:#55C07F; --bad:#EF7468; --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html{height:100%;box-sizing:border-box}
+body{height:100%;margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+.app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
+.top{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap;z-index:6}
+.brand{font-family:var(--serif);font-weight:700;font-size:18px;letter-spacing:.04em;margin:0;white-space:nowrap}
+.cur-title{font-weight:500;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.btn{border:1px solid var(--line-2);background:var(--surface);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px;justify-content:center;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--ink-2)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--ink-2)}
+.btn.danger{color:var(--bad)}
+.btn.sq{width:30px;padding:5px 0}
+.btn.sm{padding:2px 8px;font-size:12px}
+.search{flex:1 1 160px;max-width:280px;min-width:120px}
+.search input{width:100%;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);padding:5px 10px}
+.zoom{display:flex;align-items:center;gap:4px;margin-left:auto}
+#zoomPct{font-family:var(--mono);font-size:12px;width:44px;text-align:center;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.saved{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+/* three-column body */
+.main{display:grid;grid-template-columns:250px minmax(0,1fr) 380px;min-height:0}
+.app.noside .main{grid-template-columns:0 minmax(0,1fr) 380px}
+.app.noinsp .main{grid-template-columns:250px minmax(0,1fr) 0}
+.app.noside.noinsp .main{grid-template-columns:0 minmax(0,1fr) 0}
+.app.noside .side,.app.noinsp .insp{display:none}
+@media (max-width:900px){
+  .main,.app.noside .main,.app.noinsp .main,.app.noside.noinsp .main{grid-template-columns:1fr}
+  .side{position:fixed;left:0;top:0;bottom:0;width:min(300px,85vw);z-index:12;box-shadow:10px 0 40px rgba(0,0,0,.25);padding-top:calc(12px + env(safe-area-inset-top,0px))}
+  .insp{position:fixed;left:0;right:0;bottom:0;max-height:60%;border-left:0!important;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(0,0,0,.15);z-index:10;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))!important}
+}
+/* sidebar */
+.side{background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;padding:12px 10px;gap:10px}
+.side-h{display:flex;justify-content:space-between;align-items:center;padding:0 6px}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.boards{list-style:none;margin:0;padding:0;overflow:auto;flex:1;display:flex;flex-direction:column;gap:2px}
+.boards li{position:relative;border-radius:8px}
+.boards li:hover{background:var(--surface-2)}
+.boards li.cur{background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.boards .open{width:100%;text-align:left;border:0;background:transparent;padding:8px 10px;cursor:pointer;display:flex;flex-direction:column;gap:2px;border-radius:8px}
+.boards .open b{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:36px}
+.boards li.cur .open b{color:var(--accent);font-weight:700}
+.boards .open span{font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.boards .del{position:absolute;right:6px;top:7px;opacity:0}
+.boards li:hover .del,.boards .del:focus,.boards .del[data-arm="1"]{opacity:1}
+.boards .grp{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;color:var(--muted);padding:10px 10px 4px}
+.side-f{font-size:11px;color:var(--muted);padding:0 6px}
+/* canvas */
+.vp{position:relative;overflow:hidden;touch-action:none;cursor:grab;background-color:var(--ground);background-image:radial-gradient(var(--dot) 1.2px,transparent 1.3px);background-size:24px 24px}
+.vp.panning{cursor:grabbing}
+.world{position:absolute;left:0;top:0;transform-origin:0 0}
+#edges{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;pointer-events:none}
+.sec{position:absolute;border-radius:18px;background:color-mix(in srgb,var(--c) 6%,transparent);border:1.5px solid color-mix(in srgb,var(--c) 30%,transparent)}
+.sec-t{position:absolute;left:0;top:0;right:0;height:44px;padding:9px 18px;font-family:var(--serif);font-weight:700;font-size:17px;color:var(--c);cursor:move;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sec.sel{border-color:var(--c);border-width:2px}
+.node{position:absolute;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:11px 14px 13px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.node:hover{border-color:var(--line-2)}
+.node.sel{outline:2.5px solid var(--accent);outline-offset:1px}
+.node.dim{opacity:.32}
+.node.flash{animation:flash 1.4s ease}
+@keyframes flash{0%,40%{outline:3px solid var(--rel);outline-offset:3px}}
+.nk{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--c);display:flex;gap:6px;align-items:center}
+.nk::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--c)}
+.nt{font-weight:700;font-size:15.5px;line-height:1.35;margin-top:3px;text-wrap:balance}
+.nb{font-size:13px;color:var(--ink);margin-top:8px;line-height:1.62;user-select:text;-webkit-user-select:text}
+.nb p{margin:0 0 6px}
+.nb h4{font-size:13px;margin:10px 0 4px;color:var(--c)}
+.nb ul,.nb ol{margin:0 0 6px;padding-left:1.25em}
+.nb li{margin:1px 0}
+.nb li::marker{color:var(--muted)}
+.nb b{font-weight:700}
+.nb .tg{border:1px solid var(--line);border-radius:7px;margin:6px 0;background:var(--surface-2)}
+.nb .tg summary{cursor:pointer;padding:5px 9px;font-weight:500;font-size:12.5px;color:var(--ink-2)}
+.nb .tgb{padding:2px 10px 8px}
+.nb .tbl{overflow-x:auto;margin:6px 0}
+.nb table{border-collapse:collapse;font-size:12px;min-width:100%}
+.nb th,.nb td{border:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.nb th{background:var(--surface-2);font-weight:700}
+.nb .co{border-radius:7px;padding:7px 10px;margin:6px 0;font-size:12.5px}
+.nb .col{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;display:block;margin-bottom:2px;font-weight:500}
+.co-red{background:var(--co-red)} .co-red .col{color:var(--co-red-i)}
+.co-blue{background:var(--co-blue)} .co-blue .col{color:var(--co-blue-i)}
+.co-green{background:var(--co-green)} .co-green .col{color:var(--co-green-i)}
+.co-yellow{background:var(--co-yellow)} .co-yellow .col{color:var(--co-yellow-i)}
+.nb .flow{display:flex;flex-direction:column;align-items:stretch;margin:6px 0}
+.nb .fs{border:1.5px solid color-mix(in srgb,var(--c) 55%,transparent);border-radius:7px;padding:4px 9px;font-size:12.5px;background:var(--surface)}
+.nb .fa{text-align:center;color:var(--c);font-size:12px;line-height:1.3}
+.nb figure{margin:8px 0}
+.nb figure img{width:100%;height:auto;display:block;border-radius:6px;border:1px solid var(--line);background:#fff}
+.nb figcaption{font-size:11.5px;color:var(--ink-2);margin-top:4px}
+.nb .src{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:6px;white-space:nowrap}
+.nb .ph{border:1.5px dashed var(--line-2);border-radius:8px;padding:10px;background:var(--surface-2)}
+.nb .ph b{display:block;font-size:12px;color:var(--ink-2)}
+.nb .ph .q{font-size:11.5px;color:var(--muted);display:block;margin:2px 0 8px;word-break:break-word}
+.nb .ph .row{display:flex;gap:6px;flex-wrap:wrap}
+.pending{color:var(--muted);font-size:12.5px;margin-top:8px}
+.pending::after{content:"";display:block;height:8px;margin-top:6px;border-radius:4px;background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.k-root{background:var(--ink);border-color:var(--ink);padding:18px 20px}
+.k-root .nk{color:var(--surface);opacity:.7} .k-root .nk::before{background:var(--surface)}
+.k-root .nt{color:var(--surface);font-family:var(--serif);font-size:26px}
+.k-root .nb{color:var(--surface);opacity:.85}
+.k-core{border:2px solid var(--c)}
+.k-core .nt{font-family:var(--serif);font-size:20px;color:var(--c)}
+.k-category{background:color-mix(in srgb,var(--c) 9%,var(--surface));border-color:color-mix(in srgb,var(--c) 40%,transparent)}
+.k-category .nt{color:var(--c)}
+.k-question{background:var(--surface-2)}
+.k-question .nt::before{content:"Q. ";color:var(--c);font-family:var(--mono)}
+.hdl{position:absolute;right:-7px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);cursor:crosshair;opacity:0;transition:opacity .12s}
+.node:hover .hdl,.node.sel .hdl{opacity:1}
+.world.far .nb,.world.far .hdl,.world.far .pending{display:none}
+.world.far .nt{font-size:26px}
+.world.far .k-core .nt{font-size:32px}
+.world.far .sec-t{font-size:34px;height:60px}
+.eh{fill:none;stroke-width:1.6;opacity:.6}
+.er{fill:none;stroke:var(--rel);stroke-width:1.7;stroke-dasharray:7 4}
+.er.dim,.el.dim{opacity:.15}
+.er.hl{stroke-width:2.6}
+.er.sel{stroke:var(--accent);stroke-width:3}
+.eh.dim{opacity:.15}
+.hit{fill:none;stroke:transparent;stroke-width:14;pointer-events:stroke;cursor:pointer}
+.el{cursor:pointer;pointer-events:all}
+.el rect{fill:var(--surface);stroke:color-mix(in srgb,var(--rel) 45%,transparent)}
+.el text{fill:var(--rel);font-family:var(--sans);font-size:11.5px;font-weight:500}
+.el.new rect{fill:color-mix(in srgb,var(--rel) 14%,var(--surface))}
+.ar{fill:var(--rel)} .ars{fill:var(--accent)}
+#tmp{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 5}
+.agent{position:absolute;left:16px;bottom:16px;width:min(360px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);padding:12px 14px;z-index:4}
+.steps{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:2px}
+.steps li{display:grid;grid-template-columns:16px 1fr;gap:8px;align-items:start;padding:3px 0;font-size:13px;color:var(--muted)}
+.steps .dot{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line-2);margin-top:6px;margin-left:3px}
+.steps li.run{color:var(--ink)} .steps li.run .dot{border-color:var(--accent);background:var(--accent);animation:pulse 1s ease-in-out infinite}
+.steps li.done{color:var(--ink-2)} .steps li.done .dot{border-color:var(--ok);background:var(--ok)}
+.steps li.skip .dot{border-style:dashed}
+.steps li.fail{color:var(--bad)} .steps li.fail .dot{border-color:var(--bad);background:var(--bad)}
+.steps .d{display:block;font-size:11.5px;color:var(--muted);font-family:var(--mono);word-break:break-word}
+@keyframes pulse{50%{opacity:.35}}
+.hint{position:absolute;right:16px;bottom:16px;font-size:12px;color:var(--muted);background:color-mix(in srgb,var(--surface) 85%,transparent);border:1px solid var(--line);border-radius:8px;padding:6px 10px;pointer-events:none}
+@media (max-width:1100px){.hint{display:none}}
+/* inspector */
+.insp{background:var(--surface);border-left:1px solid var(--line);overflow:auto;padding:16px;display:flex;flex-direction:column;gap:14px;min-height:0}
+@media (max-width:900px){.insp:not(.open){display:none}.side:not(.open){display:none}}
+.insp h2{font-family:var(--serif);font-size:20px;margin:0;line-height:1.3;text-wrap:balance}
+.insp p{margin:0}
+.f{display:flex;flex-direction:column;gap:5px}
+.f input,.f textarea,.f select{width:100%;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);padding:7px 10px}
+.f textarea{min-height:240px;resize:vertical;line-height:1.55;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.stats b{color:var(--ink);font-weight:500}
+.links{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.links button{border:0;background:transparent;padding:3px 0;cursor:pointer;text-align:left;display:flex;gap:6px;align-items:baseline;width:100%}
+.links i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--rel);white-space:nowrap}
+.links i.h{color:var(--muted)}
+.links b{font-weight:500;text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px}
+.imgs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.imgs li{border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px;display:flex;flex-direction:column;gap:6px}
+.imgs .st{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.legend{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:13px}
+.legend li{display:grid;grid-template-columns:70px 1fr;gap:8px;color:var(--ink-2)}
+.legend b{font-family:var(--mono);font-size:11px;color:var(--ink);font-weight:500;padding-top:2px}
+.kps{margin:0;padding-left:1.2em;font-size:12.5px;color:var(--ink-2);max-height:220px;overflow:auto}
+.note{font-size:12px;color:var(--muted)}
+.note.err{color:var(--bad)}
+.divider{border:0;border-top:1px solid var(--line);margin:0}
+details.help summary{cursor:pointer;font-size:12px;color:var(--accent)}
+details.help pre{font-size:11.5px;background:var(--surface-2);border-radius:7px;padding:8px;white-space:pre-wrap;margin:6px 0 0;font-family:var(--mono)}
+.chat{display:flex;flex-direction:column;gap:8px}
+.msgs{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto}
+.msg{padding:7px 10px;border-radius:8px;font-size:13px;white-space:pre-wrap}
+.msg.u{background:var(--surface-2);align-self:flex-end;max-width:90%}
+.msg.a{border:1px solid var(--line)}
+.ask{display:flex;gap:6px}
+.ask input{flex:1;border:1px solid var(--line);border-radius:7px;background:var(--surface-2);padding:6px 10px;min-width:0}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--accent)}
+.meter{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--ok)}
+dialog{border:0;padding:0;border-radius:12px;background:var(--surface);color:var(--ink);width:min(640px,calc(100vw - 24px));max-height:calc(100dvh - 24px);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(12,16,22,.55)}
+.dlg{padding:20px;display:flex;flex-direction:column;gap:14px;max-height:calc(100dvh - 24px);overflow:auto}
+.dlg h2{font-family:var(--serif);font-size:22px;margin:0}
+.dlg textarea{width:100%;min-height:160px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);padding:10px 12px;line-height:1.6}
+.drop{border:1.5px dashed var(--line-2);border-radius:8px;padding:12px;text-align:center;color:var(--ink-2);font-size:13px;cursor:pointer;background:transparent;width:100%}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.fchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:2px 4px 2px 10px}
+.fchip button{border:0;background:transparent;cursor:pointer;color:var(--muted);padding:0 6px;font-size:14px;line-height:1}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.rules{margin:0;padding-left:1.2em;font-size:12.5px;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app" id="app">
+  <header class="top">
+    <button class="btn ghost sq" id="sideBtn" type="button" aria-label="顯示或隱藏畫布列表">☰</button>
+    <h1 class="brand">概念拆卡機</h1>
+    <span class="cur-title" id="curTitle"></span>
+    <div class="search"><input type="search" id="q" placeholder="搜尋卡片內容…" aria-label="搜尋卡片"></div>
+    <span class="saved" id="saved"></span>
+    <div class="zoom">
+      <button class="btn sq" id="zOut" type="button" aria-label="縮小">−</button>
+      <span id="zoomPct">100%</span>
+      <button class="btn sq" id="zIn" type="button" aria-label="放大">+</button>
+      <button class="btn" id="zFit" type="button">全覽</button>
+      <button class="btn" id="panelBtn" type="button">面板</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <nav class="side" id="side" aria-label="我的畫布">
+      <div class="side-h"><span class="lbl">我的畫布 <span id="boardCount"></span></span></div>
+      <button class="btn primary" id="newBtn" type="button">＋ AI 新畫布</button>
+      <ul class="boards" id="boards"></ul>
+      <div class="side-f" id="storeMode"></div>
+    </nav>
+    <div class="vp" id="vp">
+      <div class="world" id="world">
+        <div id="secs"></div>
+        <svg id="edges" aria-hidden="true"></svg>
+        <div id="nodes"></div>
+      </div>
+      <div class="agent" id="agent" hidden>
+        <div class="lbl"><span>AI 代理</span><button class="btn ghost sm" id="stop" type="button">停止</button></div>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div class="hint">拖曳空白處平移 · 滾輪/捏合縮放 · 雙擊空白新增卡片 · 拖卡片右側圓點建立關聯 · 選取卡片後可直接貼上圖片</div>
+    </div>
+    <aside class="insp" id="insp" aria-label="檢視面板"></aside>
+  </div>
+</div>
+<input type="file" id="imgFile" accept="image/*" hidden>
+
+<dialog id="newDlg" aria-label="AI 新畫布">
+  <form class="dlg" id="newForm" method="dialog">
+    <h2>把資料拆成圖文知識畫布</h2>
+    <ul class="rules">
+      <li>先列出資料中的<b>每一個知識點</b>，再建立「大概念 → 分類 → 小概念 → 細節」的樹；同層概念一律並列，不會串成上下級。</li>
+      <li>每張卡依內容選擇最適合的呈現：條列短句、表格、摺疊的詳細機制、重點色塊、流程或圖片；專有名詞中英對照。</li>
+      <li>圖片依序：① 從你的檔案擷取 → ② 需要真實影像時提供網路搜尋 → ③ AI 繪製示意圖。</li>
+      <li>最後逐一核對知識點，把遺漏的補成新卡。</li>
+    </ul>
+    <div class="f"><div class="lbl"><label for="src">貼上文字（可與檔案並用）</label><span id="srcCount">0 字</span></div>
+      <textarea id="src" placeholder="課堂筆記、共筆、講義、逐字稿……"></textarea></div>
+    <button class="drop" id="drop" type="button">拖放或點選上傳　PDF · PPTX · DOCX · TXT · MD · HTML · 圖片</button>
+    <input type="file" id="file" hidden multiple>
+    <div class="chips" id="fileChips"></div>
+    <div class="grid3">
+      <div class="f"><label class="lbl" for="bigN">大概念數量</label>
+        <select id="bigN"><option value="auto">自動（3–8 個）</option><option value="3">3 個</option><option value="4">4 個</option><option value="5">5 個</option><option value="6">6 個</option><option value="8">8 個</option></select></div>
+      <div class="f"><label class="lbl" for="tier">思考深度</label>
+        <select id="tier"><option value="default">標準</option><option value="complex">深入（較慢、較準）</option></select></div>
+      <div class="f"><label class="lbl" for="genN">自動繪製示意圖</label>
+        <select id="genN"><option value="12">最多 12 張</option><option value="24">最多 24 張</option><option value="0">不自動繪製</option></select></div>
+    </div>
+    <div class="f"><label class="lbl" for="extra">額外指示（選填）</label>
+      <input type="text" id="extra" placeholder="例如：著重國考重點、以臨床診斷角度、多放比較表"></div>
+    <p class="note" id="newNote"></p>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn ghost" type="button" id="newCancel">取消</button>
+      <button class="btn primary" type="submit" id="newGo">開始拆解</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const S = (v, n) => String(v ?? '').trim().slice(0, n);
+const tw = (s, fs) => { let w = 0; for (const ch of String(s)) w += /[\u2E80-\uFFFF]/.test(ch) ? fs : fs * 0.58; return w; };
+const KIND = {root: '主題', core: '大概念', category: '分類', concept: '概念', question: '自測題', definition: '定義', example: '例子', list: '清單'};
+const W_OF = k => k === 'root' ? 340 : k === 'core' ? 340 : k === 'category' ? 250 : 360;
+const TONE = {red: '警告・禁忌', blue: '重點・記憶點', green: '臨床應用・記憶技巧', yellow: '提示・易混淆'};
+const IMG_RE = /^!\[([^\]]*)\]\((.+?)(?:\s+"([^"]*)")?\)$/;
+
+/* ================= state ================= */
+let B = null, V = {x: 40, y: 40, k: 1}, sel = null, showHier = true, userMoved = false;
+let sample = null, downloads = null, assets = null, imgLimits = null, busy = null;
+let files = [];
+const els = new Map(), chats = {}, memURLs = {}, genBusy = new Set();
+const vp = $('vp'), world = $('world'), svg = $('edges');
+
+function newBoard(title) {
+  const root = {id: 'n' + uid(), kind: 'root', title: title || '新畫布', md: '', sec: null, parent: null, x: 0, y: 0, w: W_OF('root')};
+  return {id: 'b' + Date.now(), kind: 'board', v: 3, title: root.title, summary: '', createdAt: Date.now(), excerpt: '', kps: [], figures: [], sections: [], nodes: [root], edges: []};
+}
+function upgrade(b) { // boards made by the previous version stored plain `body`
+  b.kps ||= []; b.figures ||= []; b.sections ||= []; b.edges ||= [];
+  b.nodes.forEach(n => { if (n.md == null) { n.md = n.kind === 'list' ? String(n.body || '').split(/\n+/).filter(Boolean).map(l => '- ' + l).join('\n') : (n.body || ''); delete n.body; } n.w = W_OF(n.kind); });
+  return b;
+}
+const rootOf = b => b.nodes.find(n => n.kind === 'root');
+const nodeById = id => B.nodes.find(n => n.id === id);
+const secById = id => B.sections.find(s => s.id === id);
+const colorOf = n => { const s = n.sec && secById(n.sec); return s ? `var(--b${s.color % 6 + 1})` : 'var(--ink-2)'; };
+
+/* ================= card markdown ================= */
+const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+const isSpecial = l => { const t = l.trim(); return /^(\+\+\+|```|\||>|#{1,6}\s|!\[)/.test(t) || /^\s*([-*•]|\d+[.、)])\s+/.test(l); };
+function listHtml(items) {
+  let h = ''; const st = [];
+  items.forEach(it => {
+    while (st.length > it.lv + 1) h += '</li></' + st.pop() + '>';
+    if (st.length === it.lv + 1) h += '</li>';
+    while (st.length < it.lv + 1) { const tg = it.ol ? 'ol' : 'ul'; h += `<${tg}>`; st.push(tg); }
+    h += `<li>${inline(it.text)}`;
+  });
+  while (st.length) h += '</li></' + st.pop() + '>';
+  return h;
+}
+function parseSrc(src) {
+  const m = String(src).match(/^(asset|mem|ex|fig|web|gen):([\s\S]*?)(?:@(\d+)x(\d+))?$/);
+  return m ? {type: m[1], val: m[2], w: +m[3] || 0, h: +m[4] || 0} : {type: 'bad', val: src};
+}
+function imgURL(p) { return p.type === 'asset' ? (window.__ccmBlobURL?.(p.val) || '/_blob/' + p.val) : p.type === 'mem' ? memURLs[p.val] : p.type === 'ex' ? EX_IMG[p.val] : null; }
+function imgHtml(cap, src, source, nodeId, idx) {
+  const p = parseSrc(src), url = imgURL(p);
+  const ar = p.w && p.h ? `aspect-ratio:${p.w}/${p.h}` : 'aspect-ratio:16/10';
+  if (url) return `<figure><img src="${esc(url)}" alt="${esc(cap)}" style="${ar}" draggable="false"><figcaption>${inline(cap)}${source ? `<span class="src">${esc(source)}</span>` : ''}</figcaption></figure>`;
+  if (p.type === 'mem') return `<figure class="ph"><b>圖片未儲存（重新整理後遺失）</b><span class="q">${esc(cap)}</span><div class="row"><button class="btn sm" data-act="upload" data-n="${nodeId}" data-i="${idx}">重新上傳</button></div></figure>`;
+  const key = nodeId + '|' + src;
+  if (p.type === 'web') {
+    const q = p.val.trim();
+    return `<figure class="ph"><b>建議圖片（網路）：${inline(cap)}</b><span class="q">搜尋：${esc(q)}</span><div class="row">
+      <a class="btn sm" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}" target="_blank" rel="noopener">Google 圖片 ↗</a>
+      <a class="btn sm" href="https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(q)}&title=Special:MediaSearch&type=image" target="_blank" rel="noopener">Wikimedia ↗</a>
+      <button class="btn sm" data-act="upload" data-n="${nodeId}" data-i="${idx}" type="button">上傳找到的圖</button>
+      <button class="btn sm" data-act="gen" data-n="${nodeId}" data-i="${idx}" type="button"${genBusy.has(key) ? ' disabled' : ''}>${genBusy.has(key) ? '繪製中…' : '找不到，改用 AI 繪製'}</button></div></figure>`;
+  }
+  if (p.type === 'gen') return `<figure class="ph"><b>示意圖：${inline(cap)}</b><span class="q">${esc(S(p.val, 120))}</span><div class="row"><button class="btn sm" data-act="gen" data-n="${nodeId}" data-i="${idx}" type="button"${genBusy.has(key) ? ' disabled' : ''}>${genBusy.has(key) ? 'AI 繪製中…' : 'AI 繪製'}</button><button class="btn sm" data-act="upload" data-n="${nodeId}" data-i="${idx}" type="button">改用自己的圖</button></div></figure>`;
+  return `<figure class="ph"><b>資料圖片待載入：${inline(cap)}</b><div class="row"><button class="btn sm" data-act="upload" data-n="${nodeId}" data-i="${idx}" type="button">上傳圖片</button></div></figure>`;
+}
+function mdToHtml(md, nodeId) {
+  const L = String(md || '').replace(/\r/g, '').split('\n'); let i = 0, imgIdx = 0;
+  const block = inToggle => {
+    let out = '';
+    while (i < L.length) {
+      const line = L[i], t = line.trim(); let m;
+      if (inToggle && /^\+\+\+\s*$/.test(t)) { i++; return out; }
+      if (!t) { i++; continue; }
+      if ((m = t.match(/^\+\+\+\s*(.+)$/))) { i++; const inner = block(true); out += `<details class="tg"><summary>${inline(m[1])}</summary><div class="tgb">${inner}</div></details>`; continue; }
+      if (/^```\s*flow/i.test(t)) { i++; const st = []; while (i < L.length && !/^```/.test(L[i].trim())) { if (L[i].trim()) st.push(L[i].trim().replace(/^(\d+[.、)]|[-*→])\s*/, '')); i++; } i++;
+        out += `<div class="flow">${st.map(s => `<div class="fs">${inline(s)}</div>`).join('<div class="fa">↓</div>')}</div>`; continue; }
+      if (/^```/.test(t)) { i++; const buf = []; while (i < L.length && !/^```/.test(L[i].trim())) buf.push(L[i++]); i++; out += `<p>${esc(buf.join('\n')).replace(/\n/g, '<br>')}</p>`; continue; }
+      if (t.startsWith('|')) { const rows = []; while (i < L.length && L[i].trim().startsWith('|')) rows.push(L[i++].trim());
+        const cells = r => r.replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+        const body = rows.filter(r => !(/^[|\s:-]+$/.test(r) && r.includes('-')));
+        if (body.length) out += `<div class="tbl"><table><thead><tr>${cells(body[0]).map(c => `<th>${inline(c)}</th>`).join('')}</tr></thead><tbody>${body.slice(1).map(r => `<tr>${cells(r).map(c => `<td>${inline(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+        continue; }
+      if (t.startsWith('>')) { const buf = []; while (i < L.length && L[i].trim().startsWith('>')) buf.push(L[i++].trim().replace(/^>\s?/, ''));
+        let tx = buf.join('\n'); const tone = /^🔴/u.test(tx) ? 'red' : /^🟢/u.test(tx) ? 'green' : /^🟡/u.test(tx) ? 'yellow' : 'blue';
+        tx = tx.replace(/^(🔴|🔵|🟢|🟡)\s*/u, '');
+        out += `<div class="co co-${tone}"><span class="col">${TONE[tone]}</span>${tx.split('\n').map(inline).join('<br>')}</div>`; continue; }
+      if ((m = t.match(IMG_RE))) { i++; out += imgHtml(m[1], m[2], m[3], nodeId, imgIdx++); continue; }
+      if ((m = t.match(/^#{1,6}\s+(.+)$/))) { i++; out += `<h4>${inline(m[1])}</h4>`; continue; }
+      if (/^\s*([-*•]|\d+[.、)])\s+/.test(line)) { const items = [];
+        while (i < L.length) { const mm = L[i].match(/^(\s*)([-*•]|\d+[.、)])\s+(.*)$/); if (!mm) break; items.push({lv: Math.min(2, Math.floor(mm[1].replace(/\t/g, '  ').length / 2)), ol: /\d/.test(mm[2]), text: mm[3]}); i++; }
+        out += listHtml(items); continue; }
+      const buf = []; while (i < L.length && L[i].trim() && !isSpecial(L[i])) buf.push(L[i++].trim());
+      if (!buf.length) { buf.push(t); i++; }
+      out += `<p>${buf.map(inline).join('<br>')}</p>`;
+    }
+    return out;
+  };
+  return block(false);
+}
+function imageLines(md) { const out = []; String(md || '').split('\n').forEach(l => { const m = l.trim().match(IMG_RE); if (m) out.push({cap: m[1], src: m[2], source: m[3] || ''}); }); return out; }
+function replaceImg(n, oldSrc, newSrc, source) {
+  let done = false;
+  n.md = String(n.md || '').split('\n').map(l => { if (done) return l; const m = l.trim().match(IMG_RE); if (!m || m[2] !== oldSrc) return l; done = true; return newSrc == null ? null : `![${m[1]}](${newSrc}${source ? ` "${source}"` : ''})`; }).filter(l => l !== null).join('\n');
+  return done;
+}
+
+/* ================= ingest AI lines ================= */
+function ingest(o, ctx) {
+  if (!o || typeof o !== 'object') return false;
+  const root = rootOf(B);
+  const covers = Array.isArray(o.covers) ? o.covers.map(c => S(c, 12)).filter(Boolean).slice(0, 40) : [];
+  const addNode = (o2, aiId) => { const n = {id: 'n' + uid(), x: NaN, y: NaN, covers, ...o2}; n.w = W_OF(n.kind); B.nodes.push(n); if (aiId) ctx.map[aiId] = n.id; ctx.added.push(n); return n; };
+  if (o.t === 'meta') { B.title = S(o.title, 40) || B.title; B.summary = S(o.summary, 240); root.title = B.title; root.md = B.summary; return true; }
+  if (o.t === 'kp') { const id = S(o.id, 12), text = S(o.text, 120); if (!id || !text || B.kps.some(k => k.id === id)) return false; B.kps.push({id, text}); return true; }
+  if (o.t === 'big') {
+    const s = {id: 's' + uid(), title: S(o.name, 40) || '未命名', color: B.sections.length};
+    B.sections.push(s);
+    const n = addNode({kind: 'core', title: s.title, md: S(o.md, 6000), sec: s.id, parent: root.id, pending: !o.md}, S(o.id, 30));
+    ctx.last = n.id; return true;
+  }
+  if (o.t === 'node') {
+    const p = nodeById(ctx.map[S(o.parent, 30)] || S(o.parent, 30)) || nodeById(ctx.last) || root;
+    const kind = ['category', 'concept', 'question'].includes(o.kind) ? o.kind : 'concept';
+    const title = S(o.title, 60); if (!title) return false;
+    addNode({kind, title, md: S(o.md, 8000), sec: p.sec, parent: p.id, pending: !o.md}, S(o.id, 30));
+    return true;
+  }
+  if (o.t === 'card') {
+    const n = nodeById(ctx.map[S(o.id, 30)] || S(o.id, 30)); if (!n) return false;
+    n.md = S(o.md, 8000); n.pending = false; ctx.written.push(n); return true;
+  }
+  if (o.t === 'rel') {
+    const f = ctx.map[S(o.from, 30)] || (nodeById(S(o.from, 30)) && S(o.from, 30)), t = ctx.map[S(o.to, 30)] || (nodeById(S(o.to, 30)) && S(o.to, 30));
+    if (!f || !t || f === t) return false;
+    const a = nodeById(f), b = nodeById(t);
+    if (a.parent === t || b.parent === f || (a.parent && a.parent === b.parent)) return false; // hierarchy is drawn by the tree, never by relation lines
+    if (B.edges.some(e => (e.from === f && e.to === t) || (e.from === t && e.to === f))) return false;
+    const e = {id: 'e' + uid(), from: f, to: t, label: S(o.label, 16)}; B.edges.push(e); ctx.edges.push(e); return true;
+  }
+  return false;
+}
+const newCtx = () => ({map: {}, last: null, added: [], edges: [], written: []});
+function lineReader(onObj) {
+  let pending = '';
+  const eat = line => { line = line.trim().replace(/^[-*\d.\s]+(?=\{)/, ''); if (!line.startsWith('{')) return; try { onObj(JSON.parse(line)); } catch {} };
+  return {push: d => { const ls = (pending + d).split('\n'); pending = ls.pop(); ls.forEach(eat); }, end: () => { if (pending) eat(pending); pending = ''; }};
+}
+
+/* ================= rendering ================= */
+function renderNode(n) {
+  let el = els.get(n.id);
+  if (!el) { el = document.createElement('div'); el.dataset.id = n.id; $('nodes').append(el); els.set(n.id, el); }
+  el.className = `node k-${n.kind}` + (sel?.t === 'node' && sel.id === n.id ? ' sel' : '');
+  el.style.width = n.w + 'px';
+  el.style.left = (isFinite(n.x) ? n.x : -99999) + 'px'; el.style.top = (isFinite(n.y) ? n.y : -99999) + 'px';
+  el.style.setProperty('--c', colorOf(n));
+  const body = n.pending ? '<div class="pending">AI 撰寫中…</div>' : n.md ? `<div class="nb">${mdToHtml(n.md, n.id)}</div>` : '';
+  el.innerHTML = `<div class="nk">${KIND[n.kind] || '概念'}</div><div class="nt">${esc(n.title)}</div>${body}<span class="hdl" title="拖曳到另一張卡片以建立關聯"></span>`;
+}
+function renderNodes() {
+  const ids = new Set(B.nodes.map(n => n.id));
+  for (const [id, el] of els) if (!ids.has(id)) { el.remove(); els.delete(id); }
+  B.nodes.forEach(renderNode); applyFocus();
+}
+const hOf = n => els.get(n.id)?.offsetHeight || 80;
+const rectOf = n => ({x: n.x, y: n.y, w: n.w, h: hOf(n)});
+function secBounds(s) {
+  const ms = B.nodes.filter(n => n.sec === s.id && isFinite(n.x)); if (!ms.length) return null;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  ms.forEach(n => { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + hOf(n)); });
+  return {x: x0 - 30, y: y0 - 60, w: x1 - x0 + 60, h: y1 - y0 + 90};
+}
+function renderSecs() {
+  const box = $('secs'); box.innerHTML = '';
+  B.sections.forEach(s => {
+    const r = secBounds(s); if (!r) return;
+    const d = document.createElement('div');
+    d.className = 'sec' + (sel?.t === 'sec' && sel.id === s.id ? ' sel' : ''); d.dataset.sec = s.id;
+    d.style.cssText = `left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px;--c:var(--b${s.color % 6 + 1})`;
+    d.innerHTML = `<div class="sec-t">${esc(s.title)}</div>`;
+    box.append(d);
+  });
+}
+function anchors(a, b) {
+  const ac = {x: a.x + a.w / 2, y: a.y + a.h / 2}, bc = {x: b.x + b.w / 2, y: b.y + b.h / 2};
+  const dx = bc.x - ac.x, dy = bc.y - ac.y;
+  const xGap = Math.max(b.x - (a.x + a.w), a.x - (b.x + b.w)), yGap = Math.max(b.y - (a.y + a.h), a.y - (b.y + b.h));
+  let p1, p2, n1, n2;
+  if (xGap > yGap) {
+    if (dx > 0) { p1 = {x: a.x + a.w, y: ac.y}; n1 = [1, 0]; p2 = {x: b.x, y: bc.y}; n2 = [-1, 0]; }
+    else { p1 = {x: a.x, y: ac.y}; n1 = [-1, 0]; p2 = {x: b.x + b.w, y: bc.y}; n2 = [1, 0]; }
+  } else {
+    if (dy > 0) { p1 = {x: ac.x, y: a.y + a.h}; n1 = [0, 1]; p2 = {x: bc.x, y: b.y}; n2 = [0, -1]; }
+    else { p1 = {x: ac.x, y: a.y}; n1 = [0, -1]; p2 = {x: bc.x, y: b.y + b.h}; n2 = [0, 1]; }
+  }
+  const c = Math.min(200, Math.max(30, Math.hypot(p2.x - p1.x, p2.y - p1.y) * 0.4));
+  const c1 = {x: p1.x + n1[0] * c, y: p1.y + n1[1] * c}, c2 = {x: p2.x + n2[0] * c, y: p2.y + n2[1] * c};
+  return {d: `M${p1.x},${p1.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${p2.x},${p2.y}`,
+    m: {x: .125 * p1.x + .375 * c1.x + .375 * c2.x + .125 * p2.x, y: .125 * p1.y + .375 * c1.y + .375 * c2.y + .125 * p2.y}};
+}
+function hierPath(a, c) {
+  // parent's right edge fans out to each child's left edge: siblings each get their own line from the parent
+  if (c.x >= a.x + a.w - 4) { const x1 = a.x + a.w, y1 = a.y + Math.min(a.h / 2, 40), x2 = c.x, y2 = c.y + Math.min(c.h / 2, 40), mx = x1 + (x2 - x1) / 2; return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`; }
+  return anchors(a, c).d;
+}
+let tmpLine = '', newEdges = new Set();
+function renderEdges() {
+  let H = '', R = '', L = '';
+  const focus = sel?.t === 'node' ? sel.id : null;
+  if (showHier) B.nodes.forEach(n => {
+    const p = n.parent && nodeById(n.parent); if (!p || !isFinite(n.x) || !isFinite(p.x)) return;
+    const on = !focus || focus === n.id || focus === p.id;
+    H += `<path class="eh${on ? '' : ' dim'}" style="stroke:${colorOf(n)}" d="${hierPath(rectOf(p), rectOf(n))}"/>`;
+  });
+  B.edges.forEach(e => {
+    const a = nodeById(e.from), b = nodeById(e.to); if (!a || !b || !isFinite(a.x) || !isFinite(b.x)) return;
+    const g = anchors(rectOf(a), rectOf(b));
+    const isSel = sel?.t === 'edge' && sel.id === e.id, touch = focus && (e.from === focus || e.to === focus);
+    const cls = isSel ? ' sel' : touch ? ' hl' : focus ? ' dim' : '';
+    R += `<path class="er${cls}" d="${g.d}" marker-end="url(#${isSel ? 'ars' : 'ar'})"/><path class="hit" data-edge="${e.id}" d="${g.d}"/>`;
+    if (e.label) { const w = tw(e.label, 11.5) + 14;
+      L += `<g class="el${focus && !touch && !isSel ? ' dim' : ''}${newEdges.has(e.id) ? ' new' : ''}" data-edge="${e.id}"><rect x="${g.m.x - w / 2}" y="${g.m.y - 10}" width="${w}" height="20" rx="10"/><text x="${g.m.x}" y="${g.m.y + 1}" text-anchor="middle" dominant-baseline="central">${esc(e.label)}</text></g>`; }
+  });
+  svg.innerHTML = `<defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ar" d="M0,0 L10,5 L0,10 z"/></marker><marker id="ars" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="ars" d="M0,0 L10,5 L0,10 z"/></marker></defs>${H}${R}${L}${tmpLine}`;
+}
+function applyFocus() {
+  const f = sel?.t === 'node' ? sel.id : null; let near = null;
+  if (f) { near = new Set([f]); const n = nodeById(f); if (n?.parent) near.add(n.parent);
+    B.nodes.forEach(m => { if (m.parent === f) near.add(m.id); }); B.edges.forEach(e => { if (e.from === f) near.add(e.to); if (e.to === f) near.add(e.from); }); }
+  for (const [id, el] of els) { el.classList.toggle('dim', !!near && !near.has(id)); el.classList.toggle('sel', sel?.t === 'node' && sel.id === id); }
+}
+let raf = 0;
+function redraw() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; renderSecs(); renderEdges(); }); }
+function renderAll() { renderNodes(); renderSecs(); renderEdges(); renderInsp(); $('curTitle').textContent = (B.example ? '範例：' : '') + B.title; renderBoards(); }
+
+/* ================= auto layout: one left-to-right tree ================= */
+function autoLayout() {
+  const wasFar = world.classList.contains('far'); world.classList.remove('far');
+  B.nodes.forEach(renderNode);
+  const kids = {}; B.nodes.forEach(n => { if (n.parent && nodeById(n.parent)) (kids[n.parent] ||= []).push(n); });
+  const root = rootOf(B), GX = 110, GY = 22, SG = 170;
+  const sh = {};
+  const subH = n => { const ks = kids[n.id] || []; const s = ks.reduce((a, k) => a + subH(k), 0) + Math.max(0, ks.length - 1) * GY; return sh[n.id] = Math.max(hOf(n), s); };
+  const widths = (n, d, arr) => { arr[d] = Math.max(arr[d] || 0, n.w); (kids[n.id] || []).forEach(k => widths(k, d + 1, arr)); return arr; };
+  const place = (n, d, top, colX) => {
+    n.x = colX[d]; n.y = top + (sh[n.id] - hOf(n)) / 2;
+    const ks = kids[n.id] || []; const s = ks.reduce((a, k) => a + sh[k.id], 0) + Math.max(0, ks.length - 1) * GY;
+    let t = top + (sh[n.id] - s) / 2; ks.forEach(k => { place(k, d + 1, t, colX); t += sh[k.id] + GY; });
+  };
+  const x0 = root.w + 170; let y = 0;
+  const trunks = kids[root.id] || [];
+  trunks.forEach(t => {
+    const arr = widths(t, 0, []), colX = [x0]; for (let d = 1; d < arr.length; d++) colX[d] = colX[d - 1] + arr[d - 1] + GX;
+    subH(t); place(t, 0, y, colX); y += sh[t.id] + SG;
+  });
+  const totalH = Math.max(0, y - SG);
+  root.x = 0; root.y = Math.max(0, totalH / 2 - hOf(root) / 2);
+  let lx = x0; B.nodes.filter(n => !n.parent && n.kind !== 'root' && !isFinite(n.x)).forEach(n => { n.x = lx; n.y = totalH + 120; lx += n.w + 30; });
+  if (wasFar) world.classList.add('far');
+  renderNodes(); renderSecs(); renderEdges();
+}
+
+/* ================= view ================= */
+function applyView() {
+  world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`;
+  vp.style.backgroundPosition = `${V.x}px ${V.y}px`; vp.style.backgroundSize = `${24 * V.k}px ${24 * V.k}px`;
+  const far = V.k < 0.4; if (far !== world.classList.contains('far')) { world.classList.toggle('far', far); redraw(); }
+  $('zoomPct').textContent = Math.round(V.k * 100) + '%';
+}
+function zoomAt(k, cx, cy) {
+  k = Math.max(0.06, Math.min(2.5, k)); const r = vp.getBoundingClientRect();
+  const px = (cx ?? r.left + r.width / 2) - r.left, py = (cy ?? r.top + r.height / 2) - r.top;
+  V.x = px - (px - V.x) * k / V.k; V.y = py - (py - V.y) * k / V.k; V.k = k; applyView();
+}
+function bounds(list) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  list.filter(n => isFinite(n.x)).forEach(n => { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + hOf(n)); });
+  return x0 === Infinity ? null : {x0: x0 - 60, y0: y0 - 90, x1: x1 + 60, y1: y1 + 60};
+}
+function fit(list) {
+  const b = bounds(list || B.nodes); if (!b) return; const r = vp.getBoundingClientRect(); if (!r.width) return;
+  const k = Math.max(0.06, Math.min(1.1, r.width / (b.x1 - b.x0), r.height / (b.y1 - b.y0)));
+  V.k = k; V.x = (r.width - (b.x1 - b.x0) * k) / 2 - b.x0 * k; V.y = (r.height - (b.y1 - b.y0) * k) / 2 - b.y0 * k; applyView();
+}
+function centerOn(n, k) { const r = vp.getBoundingClientRect(); if (k) V.k = k; V.x = r.width / 2 - (n.x + n.w / 2) * V.k; V.y = r.height / 2 - (n.y + Math.min(hOf(n), r.height / V.k * .6) / 2) * V.k; applyView(); }
+$('zIn').onclick = () => zoomAt(V.k * 1.25); $('zOut').onclick = () => zoomAt(V.k / 1.25); $('zFit').onclick = () => fit();
+const toWorld = (cx, cy) => { const r = vp.getBoundingClientRect(); return {x: (cx - r.left - V.x) / V.k, y: (cy - r.top - V.y) / V.k}; };
+
+/* ================= pointer interaction ================= */
+const ptrs = new Map(); let drag = null, pinch = null, lastTap = {t: 0, x: 0, y: 0};
+vp.addEventListener('pointerdown', e => {
+  if (e.target.closest('.agent')) return;
+  if (e.target.closest('button,a,summary,input,textarea,.tbl')) return;
+  ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = {d: Math.hypot(a.x - b.x, a.y - b.y), k: V.k}; drag = null; return; }
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  const hdl = e.target.closest('.hdl'), nodeEl = e.target.closest('.node'), secT = e.target.closest('.sec-t'), edge = e.target.closest('[data-edge]');
+  if (hdl) drag = {t: 'link', from: nodeEl.dataset.id};
+  else if (nodeEl) { const n = nodeById(nodeEl.dataset.id); drag = {t: 'node', id: n.id, sx: e.clientX, sy: e.clientY, ox: n.x, oy: n.y}; }
+  else if (secT) { const id = secT.parentNode.dataset.sec; drag = {t: 'sec', id, sx: e.clientX, sy: e.clientY, orig: B.nodes.filter(n => n.sec === id).map(n => [n, n.x, n.y])}; }
+  else if (edge) { select({t: 'edge', id: edge.dataset.edge}); return; }
+  else { drag = {t: 'pan', sx: e.clientX, sy: e.clientY, ox: V.x, oy: V.y}; vp.classList.add('panning'); }
+  drag.moved = false;
+  vp.setPointerCapture(e.pointerId);
+});
+vp.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (pinch && ptrs.size === 2) { const [a, b] = [...ptrs.values()]; zoomAt(pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d, (a.x + b.x) / 2, (a.y + b.y) / 2); userMoved = true; return; }
+  if (!drag) return;
+  const dx = e.clientX - (drag.sx ?? e.clientX), dy = e.clientY - (drag.sy ?? e.clientY);
+  if (Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+  if (drag.t === 'pan') { V.x = drag.ox + dx; V.y = drag.oy + dy; applyView(); userMoved = true; }
+  else if (drag.t === 'node' && drag.moved) { const n = nodeById(drag.id); n.x = drag.ox + dx / V.k; n.y = drag.oy + dy / V.k; const el = els.get(n.id); el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; redraw(); }
+  else if (drag.t === 'sec' && drag.moved) { drag.orig.forEach(([n, x, y]) => { n.x = x + dx / V.k; n.y = y + dy / V.k; const el = els.get(n.id); el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; }); redraw(); }
+  else if (drag.t === 'link') { const a = nodeById(drag.from), p = toWorld(e.clientX, e.clientY); drag.moved = true;
+    tmpLine = `<path id="tmp" d="M${a.x + a.w},${a.y + hOf(a) / 2} L${p.x},${p.y}"/>`; redraw(); }
+});
+function endPtr(e) {
+  ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null;
+  if (!drag) return; const d = drag; drag = null; vp.classList.remove('panning');
+  if (d.t === 'pan' && !d.moved) {
+    const now = Date.now();
+    if (now - lastTap.t < 380 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 12) { addCardAt(toWorld(e.clientX, e.clientY)); lastTap.t = 0; }
+    else { lastTap = {t: now, x: e.clientX, y: e.clientY}; select(null); }
+  } else if (d.t === 'node' && !d.moved) select({t: 'node', id: d.id});
+  else if (d.t === 'sec' && !d.moved) select({t: 'sec', id: d.id});
+  else if (d.t === 'link') {
+    tmpLine = ''; const tgt = document.elementFromPoint(e.clientX, e.clientY)?.closest('.node');
+    if (tgt && tgt.dataset.id !== d.from && !B.edges.some(x => x.from === d.from && x.to === tgt.dataset.id)) {
+      if (B.example) forkExample();
+      const ed = {id: 'e' + uid(), from: d.from, to: tgt.dataset.id, label: ''}; B.edges.push(ed); dirty(); select({t: 'edge', id: ed.id}); setTimeout(() => $('eLabel')?.focus(), 30);
+    } else redraw();
+  }
+  if (d.moved && (d.t === 'node' || d.t === 'sec')) { if (B.example) forkExample(); dirty(); }
+}
+vp.addEventListener('pointerup', endPtr); vp.addEventListener('pointercancel', endPtr);
+vp.addEventListener('wheel', e => {
+  if (e.target.closest('.agent,.tbl')) return;
+  e.preventDefault(); userMoved = true;
+  if (e.ctrlKey || e.metaKey) zoomAt(V.k * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
+  else { V.x -= e.deltaX; V.y -= e.deltaY; applyView(); }
+}, {passive: false});
+$('nodes').addEventListener('toggle', redraw, true);
+world.addEventListener('load', redraw, true);
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input,textarea,select,dialog')) return;
+  if (e.key === 'Escape') select(null);
+  if ((e.key === 'Delete' || e.key === 'Backspace') && sel && !B.example) { if (sel.t === 'node') delNode(sel.id); else if (sel.t === 'edge') delEdge(sel.id); }
+});
+$('nodes').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return; e.stopPropagation();
+  const n = nodeById(b.dataset.n); const im = imageLines(n?.md)[+b.dataset.i]; if (!n || !im) return;
+  if (b.dataset.act === 'gen') genImage(n, im);
+  if (b.dataset.act === 'upload') pickImage(n, im.src);
+});
+function addCardAt(p) {
+  if (B.example) forkExample();
+  const inSec = B.sections.find(s => { const r = secBounds(s); return r && p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h; });
+  const n = {id: 'n' + uid(), kind: 'concept', title: '新卡片', md: '', sec: inSec?.id || null, parent: null, x: p.x - 180, y: p.y - 30, w: W_OF('concept')};
+  B.nodes.push(n); renderNode(n); dirty(); select({t: 'node', id: n.id});
+  setTimeout(() => { $('iTitle')?.focus(); $('iTitle')?.select(); }, 30);
+}
+function delNode(id) {
+  const n = nodeById(id); if (!n || n.kind === 'root') return;
+  B.nodes.forEach(m => { if (m.parent === id) m.parent = n.parent; });
+  B.nodes = B.nodes.filter(m => m.id !== id); B.edges = B.edges.filter(e => e.from !== id && e.to !== id);
+  if (n.kind === 'core' && !B.nodes.some(m => m.sec === n.sec)) B.sections = B.sections.filter(s => s.id !== n.sec);
+  sel = null; renderAll(); dirty();
+}
+function delEdge(id) { B.edges = B.edges.filter(e => e.id !== id); sel = null; renderEdges(); renderInsp(); dirty(); }
+function select(s) { sel = s; applyFocus(); renderSecs(); renderEdges(); renderInsp(); if (s) $('insp').classList.add('open'); if (s && innerWidth > 900) $('app').classList.remove('noinsp'); }
+function forkExample() {
+  delete B.example; B.id = 'b' + Date.now(); B.createdAt = Date.now(); B.title = B.title + '（我的副本）';
+  rootOf(B).title = B.title; renderNode(rootOf(B)); $('curTitle').textContent = B.title; flashSaved('已複製範例為你的畫布');
+}
+
+/* ================= images: upload, paste, AI drawing ================= */
+async function putImage(blob, w, h) {
+  if (assets) { try { const r = await assets.upload(blob); return `asset:${r.id}@${w}x${h}`; } catch (e) { console.warn(e); } }
+  const k = uid(); memURLs[k] = URL.createObjectURL(blob); return `mem:${k}@${w}x${h}`;
+}
+async function imgDims(blob) { try { const b = await createImageBitmap(blob); const r = [b.width, b.height]; b.close?.(); return r; } catch { return [800, 500]; } }
+let pickTarget = null;
+function pickImage(n, src) { if (B.example) forkExample(); pickTarget = {id: n.id, src}; $('imgFile').click(); }
+$('imgFile').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f && pickTarget) await attachImage(nodeById(pickTarget.id), f, pickTarget.src); pickTarget = null; };
+async function attachImage(n, blob, replaceSrc) {
+  if (!n) return; const [w, h] = await imgDims(blob); const src = await putImage(blob, w, h);
+  if (replaceSrc) replaceImg(n, replaceSrc, src, '使用者提供'); else n.md = (n.md ? n.md + '\n' : '') + `![${blob.name ? blob.name.replace(/\.\w+$/, '') : '圖片'}](${src} "使用者提供")`;
+  renderNode(n); redraw(); renderInsp(); dirty();
+  if (!src.startsWith('asset:')) flashSaved('圖片僅暫存於此次開啟');
+}
+document.addEventListener('paste', e => {
+  if (e.target.closest('input,textarea') || sel?.t !== 'node') return;
+  const f = [...(e.clipboardData?.files || [])].find(x => x.type.startsWith('image/')); if (!f) return;
+  e.preventDefault(); if (B.example) forkExample(); attachImage(nodeById(sel.id), f);
+});
+function sanitizeSvg(text) {
+  const m = String(text).match(/<svg[\s\S]*<\/svg>/i); if (!m) throw {code: 'empty_completion'};
+  const doc = new DOMParser().parseFromString(m[0], 'image/svg+xml');
+  if (doc.querySelector('parsererror')) throw {code: 'invalid_svg', message: 'SVG 格式錯誤'};
+  const s = doc.documentElement;
+  s.querySelectorAll('script,foreignObject,image,style,iframe,link,animate,set,animateTransform').forEach(x => x.remove());
+  s.querySelectorAll('*').forEach(x => [...x.attributes].forEach(a => { if (/^on/i.test(a.name) || (/href$/i.test(a.name) && !a.value.startsWith('#'))) x.removeAttribute(a.name); }));
+  s.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  const vb = (s.getAttribute('viewBox') || '0 0 800 520').split(/[\s,]+/).map(Number);
+  const w = vb[2] || 800, h = vb[3] || 520; s.setAttribute('width', w); s.setAttribute('height', h);
+  return {svg: new XMLSerializer().serializeToString(s), w, h};
+}
+async function genImage(n, im, signal) {
+  if (!sample) { flashSaved('AI 只在 Claude 中可用'); return false; }
+  if (B.example) forkExample();
+  const p = parseSrc(im.src), key = n.id + '|' + im.src; if (genBusy.has(key)) return false;
+  genBusy.add(key); renderNode(n);
+  const what = p.type === 'gen' ? p.val : `${im.cap}（網路上找不到合適圖片，請改畫示意圖）`;
+  const prompt = `你是教學插圖繪製 AI。請用 SVG 畫一張清楚、正確的教學示意圖。
+圖說：${im.cap}
+要畫的內容：${what}
+所在卡片：${n.title}
+卡片內容摘錄：${S(n.md, 900)}
+要求：
+- 只輸出一段完整的 <svg> 原始碼，不要任何說明文字、不要程式碼區塊。
+- viewBox="0 0 800 520"；第一個元素是白色背景 rect。
+- 只用 rect、circle、ellipse、line、polyline、polygon、path、text、tspan、g、defs、marker；不要 <style>、<script>、<image>、foreignObject、外部資源；樣式一律寫成屬性（fill、stroke、font-size…）。
+- 文字用繁體中文並附英文術語，font-family="sans-serif"，字級 15–22；標籤不可重疊、不可超出畫面；用箭頭表示流程或作用方向。
+- 配色清爽：深灰文字、2–4 個柔和主色。
+- 內容必須正確；只畫你確定的結構，寧可簡化也不要畫錯。`;
+  try {
+    const {text} = await sample(prompt, {modelTier: 'default', ...(signal ? {signal} : {})});
+    const r = sanitizeSvg(text);
+    const src = await putImage(new Blob([r.svg], {type: 'image/svg+xml'}), r.w, r.h);
+    replaceImg(n, im.src, src, 'AI 繪製'); dirty(); return true;
+  } catch (e) { if (e?.code === 'cancelled') throw e; flashSaved('繪圖失敗：' + errCopy(e)); return false; }
+  finally { genBusy.delete(key); renderNode(n); redraw(); if (sel?.id === n.id) renderInsp(); }
+}
+
+/* ================= inspector ================= */
+function linkRow(label, id, cls) { const n = nodeById(id); return n ? `<li><button type="button" data-go="${id}"><i class="${cls || ''}">${esc(label)}</i><b>${esc(n.title)}</b></button></li>` : ''; }
+const MD_HELP = `- 條列（次層前加兩個空格）
+### 小標題
+**粗體**
+| 欄 | 欄 |
+|---|---|
++++ 摺疊標題
+（摺疊內容）
++++
+> 🔴 警告/禁忌　> 🔵 重點　> 🟢 臨床應用　> 🟡 提示
+\`\`\`flow
+步驟一
+步驟二
+\`\`\`
+![圖說](gen:要畫的內容)　← AI 繪製
+![圖說](web:搜尋關鍵字)　← 網路搜尋`;
+function coverage() {
+  const all = B.kps.length; if (!all) return null;
+  const cov = new Set(); B.nodes.forEach(n => { if (!n.pending && n.md) (n.covers || []).forEach(c => cov.add(c)); });
+  const miss = B.kps.filter(k => !cov.has(k.id));
+  return {all, got: all - miss.length, miss};
+}
+function renderInsp() {
+  const box = $('insp');
+  if (sel?.t === 'node' && nodeById(sel.id)) {
+    const n = nodeById(sel.id), s = n.sec && secById(n.sec);
+    const out = B.edges.filter(e => e.from === n.id), inn = B.edges.filter(e => e.to === n.id);
+    const kids = B.nodes.filter(m => m.parent === n.id), par = n.parent && nodeById(n.parent);
+    const ims = imageLines(n.md), kps = (n.covers || []).map(c => B.kps.find(k => k.id === c)).filter(Boolean);
+    box.innerHTML = `
+      <div class="lbl"><span>${KIND[n.kind] || '概念'}${s ? ' · ' + esc(s.title) : ''}</span><button class="btn ghost sm" type="button" id="iClose">✕</button></div>
+      <div class="f"><label class="lbl" for="iTitle">標題</label><input id="iTitle" value="${esc(n.title)}"></div>
+      ${['root', 'core'].includes(n.kind) ? '' : `<div class="f"><label class="lbl" for="iKind">卡片類型</label><select id="iKind">${['category', 'concept', 'question'].map(k => `<option value="${k}"${k === n.kind ? ' selected' : ''}>${KIND[k]}</option>`).join('')}</select></div>`}
+      <div class="f"><label class="lbl" for="iMd">內容</label><textarea id="iMd">${esc(n.md)}</textarea>
+        <details class="help"><summary>內容格式說明</summary><pre>${esc(MD_HELP)}</pre></details></div>
+      <div class="f"><div class="lbl"><span>圖片 ${ims.length}</span><button class="btn sm" id="iAddImg" type="button">＋ 上傳圖片</button></div>
+        ${ims.length ? `<ul class="imgs">${ims.map((im, i) => { const p = parseSrc(im.src); const st = {asset: '已放入', mem: '暫存（未儲存）', ex: '範例圖', web: '待找網路圖片', gen: '待 AI 繪製', fig: '資料圖片待載入'}[p.type] || '無效';
+          return `<li><span>${esc(im.cap)}</span><span class="st">${st}${im.source ? ' · ' + esc(im.source) : ''}</span><div class="row">
+            <button class="btn sm" data-img="upload" data-i="${i}" type="button">上傳替換</button>
+            <button class="btn sm" data-img="gen" data-i="${i}" type="button"${sample ? '' : ' disabled'}>AI 繪製</button>
+            <a class="btn sm" href="https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p.type === 'web' ? p.val : im.cap)}" target="_blank" rel="noopener">網路搜尋 ↗</a>
+            <button class="btn sm danger" data-img="rm" data-i="${i}" type="button">移除</button></div></li>`; }).join('')}</ul>` : '<p class="note">選取卡片後按 ⌘V／Ctrl+V 可直接貼上圖片。</p>'}</div>
+      ${kps.length ? `<details class="help"><summary>這張卡涵蓋的知識點（${kps.length}）</summary><ol class="kps">${kps.map(k => `<li>${esc(k.text)}</li>`).join('')}</ol></details>` : ''}
+      <div class="f"><div class="lbl">連結</div><ul class="links">
+        ${par ? linkRow('上位 ↑', par.id, 'h') : ''}${kids.map(k => linkRow('下位 ↓', k.id, 'h')).join('')}
+        ${out.map(e => linkRow((e.label || '關聯') + ' →', e.to)).join('')}${inn.map(e => linkRow('← ' + (e.label || '關聯'), e.from)).join('')}
+        ${!par && !kids.length && !out.length && !inn.length ? '<li class="note">尚無連結。拖曳卡片右側圓點到另一張卡片即可建立關聯。</li>' : ''}
+      </ul></div>
+      <hr class="divider">
+      <div class="row"><button class="btn" id="iExpand" type="button">AI 往下拆解</button>${n.kind === 'root' ? '' : '<button class="btn danger" id="iDel" type="button">刪除卡片</button>'}</div>
+      <p class="note" id="iNote"></p>
+      <div class="chat"><div class="lbl">追問 AI</div><div class="msgs" id="mMsgs"></div>
+        <form class="ask" id="mAsk"><input id="mQ" placeholder="例如：為什麼會這樣？臨床上怎麼用？" aria-label="問題"><button class="btn" type="submit">問</button></form></div>`;
+    const upd = () => { if (B.example) forkExample(); renderNode(n); redraw(); dirty(); };
+    $('iTitle').oninput = e => { n.title = e.target.value; if (n.kind === 'root') { B.title = n.title; $('curTitle').textContent = B.title; } if (n.kind === 'core' && s) s.title = n.title; upd(); };
+    $('iMd').oninput = e => { n.md = e.target.value; n.pending = false; upd(); };
+    $('iMd').onchange = () => renderInsp();
+    if ($('iKind')) $('iKind').onchange = e => { n.kind = e.target.value; n.w = W_OF(n.kind); upd(); renderInsp(); };
+    $('iAddImg').onclick = () => pickImage(n, null);
+    box.querySelectorAll('[data-img]').forEach(b => b.onclick = () => { const im = imageLines(n.md)[+b.dataset.i]; if (!im) return;
+      if (b.dataset.img === 'upload') pickImage(n, im.src);
+      if (b.dataset.img === 'gen') genImage(n, im);
+      if (b.dataset.img === 'rm') { if (B.example) forkExample(); replaceImg(n, im.src, null); renderNode(n); redraw(); renderInsp(); dirty(); } });
+    $('iExpand').onclick = () => expandNode(n.id); $('iExpand').disabled = !sample || !!busy;
+    if ($('iDel')) $('iDel').onclick = e => { if (e.target.dataset.arm !== '1') { e.target.dataset.arm = '1'; e.target.textContent = '再按一次確認'; return; } if (B.example) forkExample(); delNode(n.id); };
+    $('mAsk').onsubmit = ev => { ev.preventDefault(); askNode(n.id); };
+    $('mAsk').querySelector('button').disabled = !sample;
+    renderMsgs(n.id);
+  } else if (sel?.t === 'edge' && B.edges.find(e => e.id === sel.id)) {
+    const e = B.edges.find(x => x.id === sel.id);
+    box.innerHTML = `
+      <div class="lbl"><span>關聯線</span><button class="btn ghost sm" type="button" id="iClose">✕</button></div>
+      <ul class="links">${linkRow('從', e.from, 'h')}${linkRow('到', e.to, 'h')}</ul>
+      <div class="f"><label class="lbl" for="eLabel">關係（例如：導致、作用於、對比、前提）</label><input id="eLabel" value="${esc(e.label)}"></div>
+      <div class="row"><button class="btn" id="eRev" type="button">反轉方向</button><button class="btn danger" id="eDel" type="button">刪除關聯</button></div>
+      <p class="note">紅色虛線是「邏輯關聯」；上下級關係由彩色實線的樹狀結構表示。</p>`;
+    $('eLabel').oninput = ev => { if (B.example) forkExample(); B.edges.find(x => x.id === e.id).label = S(ev.target.value, 16); redraw(); dirty(); };
+    $('eRev').onclick = () => { if (B.example) forkExample(); const x = B.edges.find(y => y.id === e.id); [x.from, x.to] = [x.to, x.from]; redraw(); renderInsp(); dirty(); };
+    $('eDel').onclick = () => { if (B.example) forkExample(); delEdge(e.id); };
+  } else if (sel?.t === 'sec' && secById(sel.id)) {
+    const s = secById(sel.id), ms = B.nodes.filter(n => n.sec === s.id);
+    box.innerHTML = `<div class="lbl"><span>區塊</span><button class="btn ghost sm" type="button" id="iClose">✕</button></div>
+      <div class="f"><label class="lbl" for="sTitle">區塊名稱</label><input id="sTitle" value="${esc(s.title)}"></div>
+      <p class="note">${ms.length} 張卡片。拖曳區塊標題可整塊移動。</p>
+      <ul class="links">${ms.map(m => linkRow(KIND[m.kind] || '概念', m.id, 'h')).join('')}</ul>`;
+    $('sTitle').oninput = ev => { if (B.example) forkExample(); secById(s.id).title = ev.target.value; renderSecs(); dirty(); };
+  } else {
+    sel = null;
+    const cv = coverage(), ims = B.nodes.flatMap(n => imageLines(n.md).map(im => parseSrc(im.src).type));
+    const cnt = t => ims.filter(x => x === t).length;
+    box.innerHTML = `
+      <div class="lbl"><span>${B.example ? '範例畫布' : '畫布'}</span><button class="btn ghost sm" type="button" id="iClose">✕</button></div>
+      <h2>${esc(B.title)}</h2>${B.summary ? `<p style="color:var(--ink-2)">${esc(B.summary)}</p>` : ''}
+      <div class="stats"><span><b>${B.sections.length}</b> 大概念</span><span><b>${B.nodes.length - 1}</b> 卡片</span><span><b>${B.edges.length}</b> 關聯</span><span><b>${ims.length}</b> 圖片</span></div>
+      ${cv ? `<div class="f"><div class="lbl"><span>知識點涵蓋</span><span>${cv.got} / ${cv.all}</span></div><div class="meter"><i style="width:${cv.got / cv.all * 100}%"></i></div>
+        ${cv.miss.length ? `<details class="help"><summary>尚未涵蓋 ${cv.miss.length} 個知識點</summary><ol class="kps">${cv.miss.map(k => `<li>${esc(k.text)}</li>`).join('')}</ol></details><button class="btn" id="oFix" type="button">AI 補寫遺漏的知識點</button>` : '<p class="note">資料中的每個知識點都已寫進卡片。</p>'}</div>` : ''}
+      ${cnt('web') + cnt('gen') ? `<div class="f"><div class="lbl">待處理圖片</div><p class="note">${cnt('web')} 張建議網路圖片、${cnt('gen')} 張待 AI 繪製。</p>${cnt('gen') ? '<button class="btn" id="oGen" type="button">AI 繪製全部待繪示意圖</button>' : ''}</div>` : ''}
+      <div class="row">
+        <button class="btn" id="oLink" type="button">AI 補上遺漏的關聯</button>
+        <button class="btn" id="oLayout" type="button">重新排版</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="oHier"${showHier ? ' checked' : ''}>顯示上下級樹狀線</label>
+      <p class="note" id="oNote"></p>
+      <hr class="divider">
+      <ul class="legend">
+        <li><b>大概念</b><span>從主題拆出的主要面向；每個大概念一個彩色區塊</span></li>
+        <li><b>分類</b><span>一組並列項目的上層（例如「抗生素的種類」）</span></li>
+        <li><b>概念</b><span>完整的知識卡：條列、表格、摺疊細節、色塊與圖片</span></li>
+        <li><b>彩色實線</b><span>上下級：父卡一條線各自連到每個子卡，同層並列</span></li>
+        <li><b style="color:var(--rel)">紅色虛線</b><span>跨分支的邏輯關聯（有方向、有標籤）</span></li>
+        <li><b>色塊</b><span><span style="color:var(--co-red-i)">紅</span> 警告禁忌 · <span style="color:var(--co-blue-i)">藍</span> 重點 · <span style="color:var(--co-green-i)">綠</span> 臨床應用 · <span style="color:var(--co-yellow-i)">黃</span> 提示</span></li>
+      </ul>
+      <hr class="divider">
+      <div class="row"><button class="btn ghost" id="oMd" type="button">匯出 Notion 筆記＋圖片 ZIP</button><button class="btn ghost" id="oJson" type="button">匯出 JSON</button></div>
+      ${B.example ? '<p class="note">這是範例畫布，任何修改都會自動複製成你自己的畫布。按左側「＋ AI 新畫布」拆解你的資料。</p>' : ''}`;
+    $('oLink').onclick = linkify; $('oLink').disabled = !sample || !!busy;
+    if ($('oFix')) { $('oFix').onclick = () => runSolo('fix', '補寫遺漏的知識點', sig => fixCoverage(sig)); $('oFix').disabled = !sample || !!busy; }
+    if ($('oGen')) { $('oGen').onclick = () => runSolo('img', '繪製示意圖', sig => genAll(sig, 99)); $('oGen').disabled = !sample || !!busy; }
+    $('oLayout').onclick = () => { if (B.example) forkExample(); autoLayout(); fit(); dirty(); };
+    $('oHier').onchange = e => { showHier = e.target.checked; renderEdges(); };
+    $('oMd').onclick = exportZip;
+    $('oJson').onclick = async () => { const d = JSON.parse(JSON.stringify(B)); delete d.example; $('oNote').textContent = await saveFile(safeName(B.title) + '.json', JSON.stringify(d, null, 2)); };
+  }
+  $('iClose').onclick = () => { if (sel) select(null); else { $('insp').classList.remove('open'); $('app').classList.add('noinsp'); } };
+  box.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const n = nodeById(b.dataset.go); select({t: 'node', id: n.id}); centerOn(n); });
+}
+$('panelBtn').onclick = () => { if (innerWidth > 900) $('app').classList.toggle('noinsp'); else $('insp').classList.toggle('open'); };
+$('sideBtn').onclick = () => { if (innerWidth > 900) $('app').classList.toggle('noside'); else $('side').classList.toggle('open'); setTimeout(() => { if (!userMoved) fit(); }, 30); };
+
+/* ================= search ================= */
+let hits = [], hitI = 0;
+$('q').addEventListener('input', e => { const q = e.target.value.trim().toLowerCase(); hits = q ? B.nodes.filter(n => (n.title + ' ' + n.md).toLowerCase().includes(q)) : []; hitI = 0; if (hits[0]) goHit(); });
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter' && hits.length) { hitI = (hitI + 1) % hits.length; goHit(); } });
+function goHit() { const n = hits[hitI]; select({t: 'node', id: n.id}); centerOn(n, Math.max(V.k, 0.8)); els.get(n.id)?.classList.add('flash'); setTimeout(() => els.get(n.id)?.classList.remove('flash'), 1400); }
+
+/* ================= storage + sidebar ================= */
+const store = {
+  mode: 'local', col: null,
+  async init() {
+    try { const [db, user] = await Promise.all([window.claude?.use?.('db'), window.claude?.use?.('user')]);
+      if (db && user) { const id = (await user.id?.()) || (await user.me())?.id; if (id) { this.col = db.collection('data/users/' + id); this.mode = 'db'; } } } catch { this.mode = 'local'; }
+  },
+  local() { try { return JSON.parse(localStorage.getItem('ccm-boards') || '[]'); } catch { return []; } },
+  async list() {
+    let all = [];
+    if (this.mode === 'db') { try { all = (await this.col.get()).docs.map(d => ({...d.data(), id: d.id})); } catch {} } else all = this.local();
+    return all.filter(d => d.kind === 'board' && Array.isArray(d.nodes));
+  },
+  async save(b) {
+    const data = JSON.parse(JSON.stringify(b)); delete data.example; data.updatedAt = Date.now();
+    data.nodes.forEach(n => { delete n.pending; });
+    if (JSON.stringify(data).length > 250000) return 'big';
+    if (this.mode === 'db') { try { await this.col.doc(b.id).set(data); return true; } catch (e) { console.warn(e); return false; } }
+    try { const all = this.local().filter(x => x.id !== b.id); all.push(data); localStorage.setItem('ccm-boards', JSON.stringify(all)); return true; } catch { return false; }
+  },
+  async remove(id) {
+    if (this.mode === 'db') { try { await this.col.doc(id).delete(); } catch {} return; }
+    try { localStorage.setItem('ccm-boards', JSON.stringify(this.local().filter(x => x.id !== id))); } catch {}
+  }
+};
+let boards = [], saveT = 0;
+function flashSaved(t) { $('saved').textContent = t; }
+const saveMsg = ok => ok === true ? '已儲存' : ok === 'big' ? '畫布太大無法儲存，請匯出或拆成兩張畫布' : '儲存失敗，請匯出 JSON';
+function dirty() {
+  if (B.example) return; flashSaved('未儲存…'); clearTimeout(saveT);
+  saveT = setTimeout(async () => { const ok = await store.save(B); flashSaved(saveMsg(ok)); const i = boards.findIndex(b => b.id === B.id); if (i < 0) refreshBoards(); else { boards[i] = {...boards[i], title: B.title, nodes: B.nodes, sections: B.sections, updatedAt: Date.now()}; renderBoards(); } }, 900);
+}
+async function refreshBoards() { boards = (await store.list()).sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0)); renderBoards(); }
+function boardItem(d) {
+  const li = document.createElement('li'); if (B && d.id === B.id) li.className = 'cur';
+  const dt = d.example ? '範例' : new Date(d.updatedAt || d.createdAt).toLocaleString('zh-TW', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+  li.innerHTML = `<button class="open" type="button"><b>${esc(d.title)}</b><span>${esc(dt)} · ${(d.nodes?.length || 1) - 1} 卡 · ${d.sections?.length || 0} 大概念</span></button>`;
+  li.querySelector('.open').onclick = () => { $('side').classList.remove('open'); if (d.id === B.id) return; openBoard(d.example ? buildExample() : upgrade(JSON.parse(JSON.stringify(d)))); };
+  if (!d.example) { const del = document.createElement('button'); del.className = 'btn ghost danger sm del'; del.type = 'button'; del.textContent = '刪除'; del.setAttribute('aria-label', '刪除畫布 ' + d.title);
+    del.onclick = async () => { if (del.dataset.arm !== '1') { del.dataset.arm = '1'; del.textContent = '確定？'; setTimeout(() => { del.dataset.arm = ''; del.textContent = '刪除'; }, 3000); return; }
+      await store.remove(d.id); if (B.id === d.id) openBoard(buildExample()); refreshBoards(); };
+    li.append(del); }
+  return li;
+}
+function renderBoards() {
+  $('storeMode').textContent = window.__ccmLocal ? '畫布存在此瀏覽器（可在「API 設定」備份）' : store.mode === 'db' ? '畫布存在雲端，只有你看得到' : '畫布存在此瀏覽器';
+  $('boardCount').textContent = boards.length ? `· ${boards.length}` : '';
+  const ul = $('boards'); ul.innerHTML = '';
+  const list = [...boards]; if (B && !B.example && !list.some(b => b.id === B.id)) list.unshift(B);
+  if (!list.length) { const li = document.createElement('li'); li.innerHTML = '<p class="note" style="padding:6px 10px">還沒有畫布。按上方按鈕，把第一份資料拆成畫布。</p>'; ul.append(li); }
+  list.forEach(d => ul.append(boardItem(d)));
+  const g = document.createElement('li'); g.innerHTML = '<div class="grp">範例</div>'; ul.append(g);
+  ul.append(boardItem(EXAMPLE_META));
+}
+function openBoard(b) {
+  if (b !== B && !busy) SRC = '';
+  B = b; sel = null; userMoved = false; newEdges = new Set();
+  for (const [, el] of els) el.remove(); els.clear();
+  const needLayout = B.nodes.some(n => !isFinite(n.x) || n.x == null);
+  renderAll(); if (needLayout) autoLayout(); fit();
+  try { localStorage.setItem('ccm-last-board', B.id); } catch {}
+  flashSaved(B.example ? '範例' : '');
+}
+
+/* ================= reading source files ================= */
+const loadScript = u => new Promise((ok, bad) => { const s = document.createElement('script'); s.src = u; s.onload = ok; s.onerror = bad; document.head.append(s); });
+let pdfReady = null, zipReady = null;
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+async function getPdfLib() { pdfReady ||= loadScript(PDFJS + 'pdf.min.js').then(() => loadScript(PDFJS + 'pdf.worker.min.js')); await pdfReady; window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js'; return window.pdfjsLib; }
+async function getZip() { zipReady ||= loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'); await zipReady; return window.JSZip; }
+const MAXV = 40;
+const xmlText = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
+const extType = n => ({png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp'})[String(n).split('.').pop().toLowerCase()];
+async function readSources(text, fileList, report) {
+  let full = text ? text.trim() + '\n' : ''; const visuals = [];
+  for (const f of fileList) {
+    const name = f.name, low = name.toLowerCase();
+    try {
+      if (f.type.startsWith('image/')) { const [w, h] = await imgDims(f); const key = 'v' + visuals.length; visuals.push({key, label: name, blob: f, w, h, needText: true, full: false}); full += `\n[圖片：${name}]\n⟦${key}⟧\n`; continue; }
+      if (low.endsWith('.pdf')) {
+        const lib = await getPdfLib(); const pdf = await lib.getDocument({data: new Uint8Array(await f.arrayBuffer()), isEvalSupported: false}).promise;
+        const IMG_OPS = new Set(['paintImageXObject', 'paintInlineImageXObject', 'paintImageXObjectRepeat', 'paintJpegXObject'].map(k => lib.OPS[k]).filter(v => v != null));
+        const N = Math.min(pdf.numPages, 150);
+        for (let p = 1; p <= N; p++) {
+          report(`${name}：第 ${p}/${N} 頁`);
+          const page = await pdf.getPage(p); const tc = await page.getTextContent();
+          const txt = tc.items.map(it => it.str + (it.hasEOL ? '\n' : '')).join('').trim();
+          let imgOps = 0, pathOps = 0; try { const ol = await page.getOperatorList(); ol.fnArray.forEach(fn => { if (IMG_OPS.has(fn)) imgOps++; if (fn === lib.OPS.constructPath) pathOps++; }); } catch {}
+          const needText = txt.replace(/\s/g, '').length < 40;
+          full += `\n[${name} 第${p}頁]\n${txt}\n`;
+          if ((needText || imgOps > 0 || pathOps > 25) && visuals.length < MAXV) {
+            const vp0 = page.getViewport({scale: 1}), sc = Math.min(2.2, 1500 / vp0.width), view = page.getViewport({scale: sc});
+            const cv = document.createElement('canvas'); cv.width = Math.round(view.width); cv.height = Math.round(view.height);
+            await page.render({canvasContext: cv.getContext('2d'), viewport: view}).promise;
+            const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.86));
+            const key = 'v' + visuals.length; visuals.push({key, label: `${name} 第${p}頁`, blob, w: cv.width, h: cv.height, needText, full: false});
+            if (needText) full += `⟦${key}⟧\n`;
+          }
+        }
+        continue;
+      }
+      if (low.endsWith('.pptx') || low.endsWith('.docx')) {
+        const JSZip = await getZip(); const zip = await JSZip.loadAsync(f); const seen = new Set();
+        const addMedia = async (path, label) => {
+          if (seen.has(path) || visuals.length >= MAXV) return; seen.add(path);
+          const type = extType(path), zf = zip.file(path); if (!type || !zf) return;
+          const buf = await zf.async('arraybuffer'); if (buf.byteLength < 6000) return;
+          const blob = new Blob([buf], {type}); const [w, h] = await imgDims(blob); if (w < 120 || h < 90) return;
+          visuals.push({key: 'v' + visuals.length, label, blob, w, h, needText: false, full: true});
+        };
+        if (low.endsWith('.pptx')) {
+          const slides = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => +a.match(/(\d+)\.xml/)[1] - +b.match(/(\d+)\.xml/)[1]);
+          for (const sp of slides) {
+            const no = +sp.match(/(\d+)\.xml/)[1]; report(`${name}：第 ${no} 張投影片`);
+            const xml = await zip.file(sp).async('string');
+            const paras = xml.split('</a:p>').map(p => [...p.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)].map(m => xmlText(m[1])).join('')).filter(Boolean);
+            full += `\n[${name} 第${no}張投影片]\n${paras.join('\n')}\n`;
+            const rels = zip.file(`ppt/slides/_rels/slide${no}.xml.rels`); if (!rels) continue;
+            const rx = await rels.async('string');
+            for (const m of rx.matchAll(/<Relationship [^>]*?Type="[^"]*\/(image|notesSlide)"[^>]*?Target="([^"]+)"/g)) {
+              const target = 'ppt/' + m[2].replace(/^\.\.\//, '');
+              if (m[1] === 'image') await addMedia(target, `${name} 第${no}張投影片`);
+              else { const nf = zip.file(target); if (nf) { const nx = await nf.async('string'); const nt = [...nx.matchAll(/<a:t>([\s\S]*?)<\/a:t>/g)].map(x => xmlText(x[1])).join(' ').replace(/^\s*\d+\s*$/, '').trim(); if (nt.length > 3) full += `（講者備註）${nt}\n`; } }
+            }
+          }
+        } else {
+          const xml = await zip.file('word/document.xml').async('string');
+          full += `\n[${name}]\n` + xml.split('</w:p>').map(p => [...p.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g)].map(m => xmlText(m[1])).join('')).filter(Boolean).join('\n') + '\n';
+          for (const m of Object.keys(zip.files).filter(n => /^word\/media\//.test(n))) await addMedia(m, `${name} 內嵌圖`);
+        }
+        continue;
+      }
+      let t = await f.text();
+      if (/\.html?$/.test(low)) t = new DOMParser().parseFromString(t, 'text/html').body.textContent.replace(/\n{3,}/g, '\n\n');
+      full += `\n[${name}]\n${t.trim()}\n`;
+    } catch (e) { console.warn(e); full += `\n[${name}：無法讀取]\n`; }
+  }
+  return {text: full, visuals};
+}
+async function cropFigure(v, bbox) {
+  const bmp = await createImageBitmap(v.blob);
+  let [x0, y0, x1, y1] = bbox.map(n => Math.max(0, Math.min(1000, +n || 0)) / 1000);
+  if (x1 <= x0 || y1 <= y0) { bmp.close?.(); return null; }
+  const full = x0 < .01 && y0 < .01 && x1 > .99 && y1 > .99;
+  if (full && v.full) { bmp.close?.(); return {blob: v.blob, w: v.w, h: v.h}; }
+  const pad = .012; x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(1, x1 + pad); y1 = Math.min(1, y1 + pad);
+  const sx = x0 * bmp.width, sy = y0 * bmp.height, sw = (x1 - x0) * bmp.width, sh = (y1 - y0) * bmp.height;
+  if (sw < 80 || sh < 60) { bmp.close?.(); return null; }
+  const sc = Math.min(1, 1600 / sw), cv = document.createElement('canvas'); cv.width = Math.round(sw * sc); cv.height = Math.round(sh * sc);
+  const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(bmp, sx, sy, sw, sh, 0, 0, cv.width, cv.height); bmp.close?.();
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  return {blob, w: cv.width, h: cv.height};
+}
+
+/* ================= AI agent ================= */
+const cb = (s, n) => clipBytes(String(s), n)[0];
+function clipBytes(s, max) { const enc = new TextEncoder(); if (enc.encode(s).length <= max) return [s, false]; let lo = 0, hi = s.length; while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (enc.encode(s.slice(0, mid)).length <= max) lo = mid; else hi = mid - 1; } return [s.slice(0, lo), true]; }
+function errCopy(e) {
+  const c = e && e.code;
+  if (e?.userMessage) return e.userMessage;
+  return ({not_granted: '你沒有允許此頁使用 Claude。重新整理頁面即可再次允許。', rate_limited: '請求太頻繁，請稍候一分鐘再試。', prompt_too_large: '資料太長，請拆成兩張畫布。', cancelled: '已停止。', refused: 'AI 無法處理這份資料的內容。', sampling_disabled: '此環境停用了 AI 功能。', session_expired: '登入已過期，請重新整理頁面。', empty_completion: 'AI 沒有產生可用的內容，請再試一次。', invalid_json: 'AI 回覆格式無法解析，請再試一次。', images_unavailable: '這個檢視無法傳送圖片給 AI。'})[c] || ('發生錯誤：' + (e?.message || c || '未知') + '。');
+}
+const LANG = '使用資料本身的語言；資料是中文就一律使用繁體中文，專有名詞中英對照（中文為主，英文術語放在括號內，例如：β-內醯胺類（β-lactams））。只根據資料內容，不要捏造資料裡沒有的事實。';
+const HIER_RULE = `【上下級關係必須分清楚】
+- 子卡一定是父卡的「一部分／一種／一個面向／一個步驟」。
+- 彼此平行的概念必須是同一張父卡底下的兄弟，絕不能把一個兄弟接在另一個兄弟底下。例：大概念「抗生素」→ 分類卡「抗生素的種類」→ 兄弟卡「β-內醯胺類（β-lactams）」與「胺基醣苷類（Aminoglycosides）」；不可以是 β-lactams → Aminoglycosides。
+- 當某概念底下有一組平行項目（種類、分類、機轉、病因、臨床表現、治療選項…），先建立一張 kind=category 的分類卡，再把各項目掛在它底下。
+- 樹最多 5 層（大概念算第 1 層）。`;
+const WRITE_RULE = `【最高原則：完整詳細】每張卡 covers 的每一個知識點都必須完整寫進內容；所有細節、數據、參數、診斷標準、劑量、例外全部保留，不可省略或過度簡化。優先完整，其次簡潔。
+【易讀性】
+- 以 bullet point 與短句呈現；複雜概念拆成邏輯清楚的小步驟；單一段落不超過 3 個重點。
+- ${LANG}
+- 重要資訊放在最前面；支持性細節（完整機制、詳細參數、罕見併發症、鑑別診斷）放進摺疊區塊，而不是刪除。
+- 比較性資訊（藥物、疾病、檢查、分類的差異）用表格，欄位要完整。
+- 色塊：> 🔴 警告/禁忌/危急值；> 🔵 重要資訊/記憶點；> 🟢 臨床應用/記憶技巧；> 🟡 提示/易混淆處。
+【判斷呈現方式】先判斷每個知識點用條列、表格、流程還是圖片最容易理解。步驟與流程用 flow 區塊。只有文字難以表達時（解剖結構、生理過程、病理機制、訊號傳遞、影像特徵、空間關係）才加圖片；圖片輔助文字而不取代文字，每張圖都要有能獨立讀懂的圖說。圖片來源依以下優先順序：
+ 1. 資料中的圖：![圖說](fig:F3) —— 只能使用下方清單中標示「清楚」的圖 id。
+ 2. 資料中沒有可用的圖，而需要真實影像（解剖照片、組織切片、顯微鏡、影像學、臨床照片、實物）：![圖說](web:精準的英文搜尋關鍵字)
+ 3. 適合自行繪製的示意圖（機制圖、關係圖、結構示意、分類圖）：![圖說](gen:詳細描述要畫的元素、位置、箭頭與標籤)
+ 不需要圖片時不要硬加。
+【卡片內容格式】
+- 條列「- 」開頭，次層前面加兩個空格
+- 小標題「### 」；粗體 **重點**
+- 表格：| 欄 | 欄 |，第二行 |---|---|
+- 摺疊：一行「+++ 摺疊標題」，接著內容，再一行「+++」
+- 色塊：「> 🔵 內容」
+- 流程：一行「\`\`\`flow」，每行一個步驟，最後一行「\`\`\`」
+- 圖片：單獨一行
+【各類卡片】大概念卡：這個面向的總覽與「快速記憶點」。分類卡（category）：2–4 行說明分類依據與包含哪些項目，並用表格比較各子項的關鍵差異。概念卡：完整內容。自測題卡（question）：md 的第一行是答案要點，接著詳解。`;
+const STEPS = [['read', '讀取資料'], ['vision', '辨識資料中的圖片與掃描頁'], ['outline', '列出所有知識點並建立上下級架構'], ['write', '撰寫圖文小卡'], ['check', '逐一核對知識點，補寫遺漏'], ['img', '處理圖片：擷取 → 網路 → AI 繪製'], ['link', '串接跨分支的邏輯關聯'], ['save', '排版並儲存']];
+function resetSteps(list) { $('steps').innerHTML = list.map(([k, n]) => `<li id="st-${k}"><span class="dot"></span><span>${n}<span class="d" id="sd-${k}"></span></span></li>`).join(''); $('agent').hidden = false; }
+function step(k, state, detail) { const li = $('st-' + k); if (!li) return; li.className = state || ''; if (detail !== undefined) $('sd-' + k).textContent = detail; }
+function setBusy(ctl) { busy = ctl; $('newBtn').disabled = !!ctl; $('stop').textContent = ctl ? '停止' : '關閉'; renderInsp(); }
+$('stop').onclick = () => { if (busy) busy.abort(); else $('agent').hidden = true; };
+async function pool(items, n, fn) { let i = 0; const run = async () => { while (i < items.length) { const k = i++; await fn(items[k], k); } }; await Promise.all(Array.from({length: Math.min(n, items.length)}, run)); }
+let layoutT = 0;
+function liveLayout() { clearTimeout(layoutT); layoutT = setTimeout(() => { autoLayout(); if (!userMoved) fit(); }, 400); }
+const figMem = {}; // figure id -> {blob,w,h} for the current build (source pages are not kept after)
+let SRC = '';     // full source text of the current build
+
+function indexLines(list) { return list.map(n => `${n.id}｜${KIND[n.kind] || '概念'}｜${n.title}｜上層:${n.parent ? nodeById(n.parent)?.title || '' : '無'}｜涵蓋:${(n.covers || []).join(',')}`).join('\n'); }
+function figCatalog() { return B.figures.length ? B.figures.map(f => `${f.id}｜${f.label}｜${f.kind}｜${f.caption}｜${f.clear ? '清楚' : '模糊，不可用'}`).join('\n') : '（資料中沒有可用的圖）'; }
+function pickSource(keys, budget) {
+  const [all, cut] = clipBytes(SRC, budget); if (!cut) return all;
+  const chunks = SRC.split(/(?=\n\[[^\]\n]{1,80}\]\n)/).flatMap(c => c.length > 4000 ? c.match(/[\s\S]{1,4000}/g) : [c]);
+  const grams = new Set(); keys.forEach(k => { const s = String(k).toLowerCase(); (s.match(/[a-z][a-z0-9-]{2,}/g) || []).forEach(w => grams.add(w)); const cj = s.replace(/[^一-鿿]/g, ''); for (let i = 0; i < cj.length - 1; i++) grams.add(cj.slice(i, i + 2)); });
+  const scored = chunks.map((c, i) => { const lc = c.toLowerCase(); let sc = 0; grams.forEach(g => { if (lc.includes(g)) sc++; }); return {c, i, sc}; }).sort((a, b) => b.sc - a.sc);
+  const enc = new TextEncoder(); let used = 0; const keep = [];
+  for (const s of scored) { const b = enc.encode(s.c).length; if (used + b > budget) continue; keep.push(s); used += b; }
+  return keep.sort((a, b) => a.i - b.i).map(s => s.c).join('\n…\n');
+}
+
+async function buildBoard(raw, fileList, opts) {
+  const ctl = new AbortController(), sig = ctl.signal; setBusy(ctl); resetSteps(STEPS);
+  const nb = newBoard('拆解中…'); openBoard(nb); userMoved = false;
+  for (const k in figMem) delete figMem[k];
+  const ctx = newCtx();
+  try {
+    /* 1 read */
+    step('read', 'run', '');
+    const src = await readSources(raw, fileList, t => step('read', 'run', t));
+    SRC = src.text;
+    step('read', 'done', `${SRC.replace(/⟦v\d+⟧/g, '').length.toLocaleString()} 字 · ${src.visuals.length} 個含圖頁面/圖片`);
+
+    /* 2 vision: find figures (and transcribe scanned pages / photos) */
+    if (src.visuals.length && imgLimits?.images) {
+      step('vision', 'run', '');
+      const per = Math.max(1, Math.min(imgLimits.images.maxCount || 1, 6)); const batches = [];
+      for (let i = 0; i < src.visuals.length; i += per) batches.push(src.visuals.slice(i, i + per));
+      let done = 0, figN = 0;
+      await pool(batches, 2, async batch => {
+        if (sig.aborted) return;
+        const prompt = `你是資料圖像分析 AI 代理。以下依序附上 ${batch.length} 張圖片：
+${batch.map((v, i) => `圖${i + 1}＝${v.label}${v.needText ? '（需要轉錄文字）' : ''}${v.full ? '（檔案內嵌圖）' : ''}`).join('\n')}
+任務：
+1. 標示「需要轉錄文字」的圖片：完整逐字轉錄其中所有文字（保留條列與表格結構，表格用 | 分隔）。其他圖片 text 留空字串。
+2. 找出每張圖片中具有教學價值的圖像：解剖圖、示意圖、流程圖、機制圖、統計圖表、表格、臨床影像、組織切片、照片等。不要收錄 logo、裝飾圖示、頁首頁尾、純文字區塊。
+3. 每個圖像給出邊界框 bbox=[x0,y0,x1,y1]，用 0–1000 正規化座標（相對整張圖片寬高），要完整框住圖與它的標籤；整張圖片本身就是一個圖像時給 [0,0,1000,1000]。
+4. clear：true 表示清楚可用；false 表示太模糊、解析度太低或被截斷而不可用。
+5. caption：≤30 字的圖說，含中英術語。
+只回覆 JSON：{"items":[{"img":1,"text":"","figures":[{"bbox":[0,0,1000,1000],"caption":"…","kind":"流程圖","clear":true}]}]}`;
+        try {
+          const r = await sample.json(prompt, {signal: sig, images: batch.map(v => v.blob), modelTier: 'default'});
+          for (const it of (Array.isArray(r?.items) ? r.items : [])) {
+            const v = batch[(+it.img || 0) - 1]; if (!v) continue;
+            if (v.needText) SRC = SRC.replace(`⟦${v.key}⟧`, S(it.text, 20000) || '');
+            for (const fg of (Array.isArray(it.figures) ? it.figures : []).slice(0, 8)) {
+              if (!Array.isArray(fg.bbox) || fg.bbox.length !== 4) continue;
+              const id = 'F' + (++figN), crop = await cropFigure(v, fg.bbox).catch(() => null); if (!crop) continue;
+              figMem[id] = crop; B.figures.push({id, label: v.label, caption: S(fg.caption, 60), kind: S(fg.kind, 12) || '圖', clear: fg.clear !== false});
+            }
+          }
+        } catch (e) { if (e?.code === 'cancelled') throw e; console.warn('vision', e); }
+        done += batch.length; step('vision', 'run', `${done}/${src.visuals.length} · 找到 ${B.figures.length} 張圖`);
+      });
+      step('vision', 'done', `找到 ${B.figures.filter(f => f.clear).length} 張清楚的圖${B.figures.some(f => !f.clear) ? `、${B.figures.filter(f => !f.clear).length} 張模糊不用` : ''}`);
+    } else step('vision', 'skip', src.visuals.length ? '這個檢視無法傳送圖片給 AI，略過' : '資料中沒有圖片');
+    SRC = SRC.replace(/⟦v\d+⟧/g, '');
+    B.excerpt = clipBytes(SRC, 9000)[0];
+    if (!SRC.trim()) throw {code: 'empty_source', message: '沒有讀到任何文字內容'};
+
+    /* 3 outline: knowledge points + strict hierarchy */
+    step('outline', 'run', 'AI 思考中（通常 30–120 秒）');
+    const [body, cut] = clipBytes(SRC, 44000);
+    const big = opts.bigN === 'auto' ? '3–8 個大概念（依內容決定）' : `剛好 ${opts.bigN} 個大概念`;
+    const p1 = `你是「知識架構分析師」AI 代理。
+任務一「知識點清單」：逐段閱讀資料，列出資料中出現的「每一個」知識點（定義、分類、機制、步驟、數據、參數、標準、劑量、例外、比較、臨床意義…）。一個知識點一行、越細越好，不可遺漏任何一個（通常 30–200 個）。
+任務二「上下級架構」：把知識點組織成一棵樹：主題 → ${big} → 分類／小概念 → 更細的概念。
+${HIER_RULE}
+- 每張卡用 covers 列出它負責講解的知識點 id；每個知識點至少被一張卡涵蓋；一張卡涵蓋 1–8 個知識點，太多就再拆子卡。
+- 可以在適當位置加 kind=question 的自測題卡（每個大概念 0–2 張）。
+- ${LANG}
+${opts.extra ? `- 使用者的額外要求：${opts.extra}\n` : ''}
+輸出 JSON Lines——一行一個 JSON 物件，不要任何其他文字、不要程式碼區塊。依序輸出：
+{"t":"meta","title":"主題(≤20字)","summary":"一句話摘要(≤80字)"}
+{"t":"kp","id":"k1","text":"知識點(≤40字)"}
+（所有知識點輸出完之後，再輸出樹。父卡一定先於子卡出現）
+{"t":"big","id":"B1","name":"大概念(≤16字)","covers":["k1"]}
+{"t":"node","id":"n1","parent":"B1","kind":"category","title":"≤20字","covers":[]}
+{"t":"node","id":"n2","parent":"n1","kind":"concept","title":"≤20字","covers":["k2","k3"]}
+
+=== 資料開始 ===
+${body}
+=== 資料結束 ===`;
+    let nK = 0, nN = 0;
+    const rd1 = lineReader(o => { if (!ingest(o, ctx)) return; if (o.t === 'kp') nK++; else if (o.t === 'big' || o.t === 'node') { nN++; liveLayout(); } if (o.t === 'meta') { $('curTitle').textContent = B.title; renderNode(rootOf(B)); }
+      step('outline', 'run', `${nK} 個知識點 · ${nN} 張卡${cut ? ' · 資料過長，已取前段' : ''}`); });
+    await sample(p1, {signal: sig, modelTier: opts.tier, onText: ({delta}) => rd1.push(delta)}); rd1.end();
+    if (!nN) throw {code: 'empty_completion'};
+    rootOf(B).md = B.summary;
+    step('outline', 'done', `${B.kps.length} 個知識點 · ${B.sections.length} 個大概念 · ${nN} 張卡${cut ? '（資料過長，只處理前段）' : ''}`);
+    clearTimeout(layoutT); autoLayout(); if (!userMoved) fit(); dirty();
+
+    /* 4 write, one big concept at a time (two in parallel) */
+    const cores = B.nodes.filter(n => n.kind === 'core');
+    let wrote = 0; const total = B.nodes.filter(n => n.pending).length;
+    step('write', 'run', `0/${total}`);
+    await pool(cores, 2, async core => {
+      if (sig.aborted) return;
+      const members = B.nodes.filter(n => n.sec === core.sec);
+      await writeCards(members, sig, n => { wrote++; step('write', 'run', `${wrote}/${total} · ${n.title}`); liveLayout(); }, opts);
+    });
+    step('write', 'done', `${B.nodes.filter(n => !n.pending && n.kind !== 'root').length} 張卡已完成`);
+
+    /* 5 coverage check */
+    step('check', 'run', '');
+    await fixCoverage(sig, t => step('check', 'run', t));
+    const cv = coverage();
+    step('check', 'done', cv ? `知識點涵蓋 ${cv.got}/${cv.all}${cv.miss.length ? '（剩餘的可在面板再按一次補寫）' : ''}` : '完成');
+
+    /* 6 images: source figures → web suggestions → AI drawings */
+    step('img', 'run', '');
+    await resolveFigures(t => step('img', 'run', t));
+    if (+opts.genN) await genAll(sig, +opts.genN, t => step('img', 'run', t));
+    const ims = B.nodes.flatMap(n => imageLines(n.md).map(im => parseSrc(im.src).type));
+    step('img', 'done', `資料擷取 ${ims.filter(t => t === 'asset' || t === 'mem').length - 0} 張已放入 · 網路建議 ${ims.filter(t => t === 'web').length} · 待繪 ${ims.filter(t => t === 'gen').length}`);
+
+    /* 7 cross-branch relations */
+    step('link', 'run', '');
+    const n7 = await linkPass(sig, t => step('link', 'run', t));
+    step('link', 'done', `${n7} 條關聯`);
+
+    /* 8 layout + save */
+    step('save', 'run', '');
+    clearTimeout(layoutT); autoLayout(); if (!userMoved) fit();
+    const ok = await store.save(B); step('save', ok === true ? 'done' : 'fail', ok === true ? (store.mode === 'db' && !window.__ccmLocal ? '已存到雲端（只有你看得到）' : '已存在此瀏覽器') : saveMsg(ok));
+    flashSaved(saveMsg(ok)); await refreshBoards(); renderAll();
+  } catch (e) {
+    const cur = STEPS.map(s => s[0]).find(k => $('st-' + k)?.className === 'run') || 'outline';
+    step(cur, 'fail', e?.code === 'empty_source' ? e.message : errCopy(e));
+    B.nodes.forEach(n => { if (n.pending) { n.pending = false; n.md ||= ''; } });
+    if (B.nodes.length > 1) { clearTimeout(layoutT); autoLayout(); await store.save(B); await refreshBoards(); renderAll(); }
+  } finally { setBusy(null); }
+}
+
+async function writeCards(list, sig, onCard, opts) {
+  const todo = list.filter(n => n.pending || !n.md); if (!todo.length) return;
+  const keys = list.flatMap(n => [n.title, ...(n.covers || []).map(c => B.kps.find(k => k.id === c)?.text || '')]);
+  const kpIds = new Set(list.flatMap(n => n.covers || []));
+  const kpText = B.kps.filter(k => kpIds.has(k.id)).map(k => `${k.id}: ${k.text}`).join('\n') || '（無）';
+  const prompt = `你是「知識小卡撰寫」AI 代理，依照「醫學筆記轉換原則」為知識畫布撰寫圖文並茂、完整詳細的小卡。
+${WRITE_RULE}
+${opts?.extra ? `【使用者的額外要求】${opts.extra}\n` : ''}
+輸出 JSON Lines，每張卡一行，不要其他文字：
+{"t":"card","id":"卡片 id","md":"卡片內容（用 \\n 換行）"}
+必須為下方「要撰寫的卡片」每一張都輸出一行。若發現資料中有知識點沒有被任何卡涵蓋，可新增子卡（parent 必須是正確的上一級，不可接在兄弟卡底下）：
+{"t":"node","id":"x1","parent":"既有卡 id","kind":"concept","title":"…","covers":["k9"],"md":"…"}
+
+=== 這個區塊的完整架構（id｜類型｜標題｜上層｜涵蓋的知識點） ===
+${cb(indexLines(list), 10000)}
+=== 要撰寫的卡片 id ===
+${todo.map(n => n.id).join('、')}
+=== 相關知識點 ===
+${cb(kpText, 8000)}
+=== 資料中的圖片清單（id｜位置｜類型｜圖說｜清晰度） ===
+${cb(figCatalog(), 4000)}
+=== 資料 ===
+${pickSource(keys, 28000)}`;
+  const ctx = newCtx(); ctx.last = todo[0].parent;
+  const rd = lineReader(o => { if (!ingest(o, ctx)) return; const n = o.t === 'card' ? ctx.written[ctx.written.length - 1] : ctx.added[ctx.added.length - 1]; if (n) { n.pending = false; renderNode(n); onCard(n); } });
+  try { await sample(prompt, {signal: sig, modelTier: opts?.tier || 'default', onText: ({delta}) => rd.push(delta)}); rd.end(); }
+  catch (e) { rd.end(); if (e?.code === 'cancelled') throw e; console.warn('write', e); }
+}
+async function fixCoverage(sig, report = () => {}) {
+  // cards the writer skipped, plus knowledge points no finished card covers
+  const empty = B.nodes.filter(n => n.kind !== 'root' && (n.pending || !String(n.md || '').trim()));
+  if (empty.length) { report(`補寫 ${empty.length} 張未完成的卡`); for (let i = 0; i < empty.length; i += 12) { if (sig.aborted) return; await writeCards(empty.slice(i, i + 12), sig, () => liveLayout()); } }
+  const cv = coverage(); if (!cv || !cv.miss.length) return;
+  report(`${cv.miss.length} 個知識點尚未涵蓋，補寫中`);
+  const prompt = `你是「知識完整性核對」AI 代理。下列知識點在知識畫布上還沒有被任何卡片講到。請為它們撰寫新卡，掛在架構中「正確的上一級」卡片底下（必要時先建立分類卡）。
+${HIER_RULE}
+${WRITE_RULE}
+輸出 JSON Lines，一行一張卡，不要其他文字：
+{"t":"node","id":"x1","parent":"既有卡 id 或你新建的分類卡 id","kind":"concept","title":"…","covers":["k12"],"md":"…"}
+
+=== 尚未涵蓋的知識點 ===
+${cb(cv.miss.map(k => `${k.id}: ${k.text}`).join('\n'), 6000)}
+=== 目前的架構（id｜類型｜標題｜上層｜涵蓋） ===
+${cb(indexLines(B.nodes), 12000)}
+=== 資料中的圖片清單 ===
+${cb(figCatalog(), 4000)}
+=== 資料 ===
+${SRC ? pickSource(cv.miss.map(k => k.text), 22000) : (B.excerpt || '（無原始資料，可用可靠的一般知識）')}`;
+  const ctx = newCtx(); let n = 0;
+  const rd = lineReader(o => { if (o.t !== 'node' || !ingest(o, ctx)) return; const m = ctx.added[ctx.added.length - 1]; m.pending = false; n++; report(`補上 ${n} 張`); liveLayout(); });
+  try { await sample(prompt, {signal: sig, modelTier: 'default', onText: ({delta}) => rd.push(delta)}); rd.end(); }
+  catch (e) { rd.end(); if (e?.code === 'cancelled') throw e; report(errCopy(e)); }
+  clearTimeout(layoutT); autoLayout(); dirty();
+}
+async function resolveFigures(report) {
+  const cache = {}; let used = 0;
+  for (const n of B.nodes) for (const im of imageLines(n.md)) {
+    const p = parseSrc(im.src); if (p.type !== 'fig') continue;
+    const f = B.figures.find(x => x.id === p.val.trim()), mem = figMem[p.val.trim()];
+    if (f && mem && f.clear) {
+      cache[f.id] ||= await putImage(mem.blob, mem.w, mem.h);
+      replaceImg(n, im.src, cache[f.id], `擷取自 ${f.label}`); used++; report(`已放入 ${used} 張資料圖`);
+    } else replaceImg(n, im.src, 'gen:' + (im.cap || '示意圖'), '');
+    renderNode(n);
+  }
+}
+async function genAll(sig, max, report = () => {}) {
+  const jobs = []; B.nodes.forEach(n => imageLines(n.md).forEach(im => { if (parseSrc(im.src).type === 'gen') jobs.push([n, im]); }));
+  const list = jobs.slice(0, max); let k = 0;
+  await pool(list, 2, async ([n, im]) => { if (sig?.aborted) return; await genImage(n, im, sig); k++; report(`AI 繪製 ${k}/${list.length}`); });
+  liveLayout(); dirty();
+}
+async function linkPass(sig, report) {
+  const existing = cb(B.edges.map(e => `${e.from}→${e.to}`).join('、'), 6000) || '（無）';
+  const prompt = `你是「知識串接」AI 代理。下面是一張知識畫布的樹狀架構。上下級關係已經由樹表示，請只找出「跨分支」的重要邏輯關聯（因果、作用於、前提、導致、對比、應用、推導、流程先後、治療↔機轉…），特別是不同大概念之間。
+規則：
+- 不要連父子卡；不要連同一張父卡底下的兄弟卡（兄弟的比較應該寫在父卡的表格裡）；不要重複既有關聯。
+- 8–30 條；label 為 2–6 字動詞片語，方向由 from 指向 to；from、to 使用清單中的 id。
+- ${LANG}
+輸出 JSON Lines，一行一個物件，不要其他文字：
+{"t":"rel","from":"id","to":"id","label":"作用於"}
+
+=== 卡片（id｜類型｜標題｜上層｜涵蓋） ===
+${cb(indexLines(B.nodes), 40000)}
+=== 既有關聯 ===
+${existing}`;
+  const ctx = newCtx();
+  const rd = lineReader(o => { if (o.t !== 'rel' || !ingest(o, ctx)) return; newEdges.add(ctx.edges[ctx.edges.length - 1].id); renderEdges(); report?.(`${ctx.edges.length} 條`); });
+  try { await sample(prompt, {signal: sig, modelTier: 'default', onText: ({delta}) => rd.push(delta)}); rd.end(); }
+  catch (e) { rd.end(); if (e?.code === 'cancelled') throw e; report?.(errCopy(e)); }
+  return ctx.edges.length;
+}
+async function runSolo(key, label, fn) {
+  if (B.example) forkExample();
+  if (!sample) return;
+  const ctl = new AbortController(); setBusy(ctl); resetSteps([[key, label]]); step(key, 'run', 'AI 處理中…');
+  try { await fn(ctl.signal); step(key, 'done', '完成'); renderAll(); dirty(); }
+  catch (e) { step(key, 'fail', errCopy(e)); renderAll(); dirty(); }
+  finally { setBusy(null); }
+}
+function linkify() { runSolo('lk', '尋找遺漏的邏輯關聯', async sig => { const n = await linkPass(sig, t => step('lk', 'run', t)); step('lk', 'done', n ? `新增 ${n} 條（淡紅底標籤）` : '沒有找到新的關聯'); }); }
+async function expandNode(id) {
+  const n = nodeById(id); if (!n) return;
+  await runSolo('exp', `往下拆解「${S(n.title, 14)}」`, async sig => {
+    const path = []; let p = n; while (p) { path.unshift(p.title); p = p.parent && nodeById(p.parent); }
+    const prompt = `你是「知識拆解」AI 代理。使用者想在知識畫布上把一張卡往下拆得更細。請為它建立下一層子卡（必要時先建分類卡，再把平行項目掛在分類卡底下）。
+${HIER_RULE}
+${WRITE_RULE}
+- 產生 2–8 張新卡，總數不超過 12；不要重複畫布上已有的卡片。${B.excerpt || SRC ? '' : '此畫布沒有原始資料，可使用可靠的一般知識。'}
+輸出 JSON Lines，一行一個物件，不要其他文字：
+{"t":"node","id":"x1","parent":"${n.id}","kind":"category","title":"…","md":"…"}
+{"t":"node","id":"x2","parent":"x1","kind":"concept","title":"…","md":"…"}
+另外可輸出 0–6 條跨分支關聯（不可連父子或兄弟）：{"t":"rel","from":"x2","to":"既有 id","label":"作用於"}
+
+=== 要往下拆解的卡片 ===
+路徑：${path.join(' › ')}
+${n.id}｜${KIND[n.kind]}｜${n.title}
+${S(n.md, 3000)}
+=== 畫布上的既有卡片 ===
+${cb(indexLines(B.nodes), 12000)}
+=== 原始資料節錄 ===
+${SRC ? pickSource([n.title, ...path], 20000) : (B.excerpt || '（無）')}`;
+    const ctx = newCtx(); ctx.last = n.id;
+    const rd = lineReader(o => { if (o.t === 'node' && !o.parent) o.parent = n.id; if (!ingest(o, ctx)) return; if (o.t === 'node') { const m = ctx.added[ctx.added.length - 1]; m.pending = false; step('exp', 'run', `${ctx.added.length} 張：${m.title}`); liveLayout(); } else { newEdges.add(ctx.edges[ctx.edges.length - 1].id); redraw(); } });
+    await sample(prompt, {signal: sig, modelTier: 'default', onText: ({delta}) => rd.push(delta)}); rd.end();
+    if (!ctx.added.length) throw {code: 'empty_completion'};
+    clearTimeout(layoutT); autoLayout(); fit([n, ...ctx.added]);
+    const gens = ctx.added.flatMap(m => imageLines(m.md).filter(im => parseSrc(im.src).type === 'gen').map(im => [m, im])).slice(0, 4);
+    await pool(gens, 2, ([m, im]) => genImage(m, im, sig));
+    step('exp', 'done', `新增 ${ctx.added.length} 張卡、${ctx.edges.length} 條關聯`);
+  });
+}
+function renderMsgs(id) {
+  const box = $('mMsgs'); if (!box) return; const m = chats[id] || [];
+  box.innerHTML = m.length ? m.map(t => `<div class="msg ${t.role === 'user' ? 'u' : 'a'}">${esc(t.content)}</div>`).join('') : '<p class="note">針對這張卡提問，AI 會參考上下級、關聯卡片與原始資料回答。</p>';
+  box.scrollTop = box.scrollHeight;
+}
+async function askNode(id) {
+  const q = $('mQ').value.trim(), n = nodeById(id); if (!q || !n || !sample) return;
+  const turns = (chats[id] ||= []); turns.push({role: 'user', content: q}); $('mQ').value = '';
+  const live = {role: 'assistant', content: '思考中…'}; turns.push(live); renderMsgs(id);
+  const near = [n.parent, ...B.nodes.filter(m => m.parent === id).map(m => m.id), ...B.edges.filter(e => e.from === id || e.to === id).map(e => e.from === id ? e.to : e.from)].map(nodeById).filter(Boolean);
+  const rules = `你是協助學習的 AI 家教。使用者在知識畫布上看一張卡片，請根據卡片、相鄰卡片與原始資料回答，條列清楚（250 字內）。${LANG}
+畫布主題：${B.title}｜${B.summary}
+卡片：${KIND[n.kind]}｜${n.title}\n${S(n.md, 3000)}
+相鄰卡片：\n${near.map(m => `- ${m.title}`).join('\n') || '（無）'}
+原始資料節錄：\n${SRC ? pickSource([n.title], 9000) : B.excerpt ? clipBytes(B.excerpt, 7000)[0] : '（無，可用可靠的一般知識回答）'}`;
+  try {
+    const {text} = await sample([{role: 'user', content: rules}, ...turns.slice(0, -1).slice(-8)], {cache: false, onText: ({text}) => { live.content = text; if (sel?.id === id) renderMsgs(id); }});
+    live.content = text;
+  } catch (e) { live.content = e.text || errCopy(e); }
+  if (sel?.id === id) renderMsgs(id);
+}
+
+/* ================= new canvas dialog ================= */
+const dlg = $('newDlg'), src = $('src');
+$('newBtn').onclick = () => { $('side').classList.remove('open'); $('newNote').className = 'note'; $('newNote').textContent = sample ? (imgLimits?.images ? '' : '提醒：這個檢視無法傳送圖片給 AI，PDF 內的圖與掃描頁不會被辨識。') : 'AI 代理只在 Claude 中開啟此頁時可用。'; $('newGo').disabled = !sample; dlg.showModal(); };
+$('newCancel').onclick = () => dlg.close();
+src.addEventListener('input', () => $('srcCount').textContent = src.value.length.toLocaleString() + ' 字');
+$('newForm').onsubmit = e => {
+  e.preventDefault(); const raw = src.value.trim();
+  if (!raw && !files.length) { $('newNote').textContent = '先貼上資料或上傳檔案。'; $('newNote').className = 'note err'; return; }
+  dlg.close(); const fl = files; files = []; renderFileChips(); src.value = ''; $('srcCount').textContent = '0 字';
+  buildBoard(raw, fl, {bigN: $('bigN').value, tier: $('tier').value, extra: $('extra').value.trim(), genN: $('genN').value});
+};
+$('drop').onclick = () => $('file').click();
+$('file').onchange = e => { addFiles([...e.target.files]); e.target.value = ''; };
+['dragover', 'dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => addFiles([...e.dataTransfer.files]));
+function addFiles(list) {
+  for (const f of list) {
+    if (f.type.startsWith('image/') && !imgLimits?.images) { $('newNote').textContent = '這個檢視無法傳送圖片給 AI，請改用含文字的檔案。'; $('newNote').className = 'note err'; continue; }
+    if (!files.some(x => x.name === f.name && x.size === f.size)) files.push(f);
+  }
+  renderFileChips();
+}
+function renderFileChips() {
+  const box = $('fileChips'); box.innerHTML = '';
+  files.forEach((f, i) => { const s = document.createElement('span'); s.className = 'fchip'; s.innerHTML = `${esc(f.name)} · ${(f.size / 1024 / 1024).toFixed(1)} MB <button type="button" aria-label="移除">×</button>`; s.querySelector('button').onclick = () => { files.splice(i, 1); renderFileChips(); }; box.append(s); });
+}
+
+/* ================= export: Notion-ready notes + numbered images ================= */
+const safeName = s => String(s).replace(/[\\/:*?"<>|]/g, '_').slice(0, 60) || 'canvas';
+async function saveFile(filename, data) {
+  if (!downloads) { if (typeof data === 'string') { try { await navigator.clipboard.writeText(data); return '這個檢視無法下載，已複製到剪貼簿。'; } catch {} } return '這個檢視不支援下載。'; }
+  try { await downloads.save({filename, data}); return '已送出下載。'; } catch (e) { return ['cancelled', 'declined'].includes(e?.code) ? '' : '下載失敗：' + (e?.message || e?.code); }
+}
+function mdForExport(md, imgs, sec) {
+  const out = []; let inToggle = false, inFlow = false, step = 0;
+  String(md || '').split('\n').forEach(l => {
+    const t = l.trim(); let m;
+    if (inFlow) { if (/^```/.test(t)) { inFlow = false; return; } if (t) out.push(`${++step}. ${t}`); return; }
+    if (/^```\s*flow/i.test(t)) { inFlow = true; step = 0; return; }
+    if (/^\+\+\+\s*$/.test(t)) { inToggle = false; return; }
+    if ((m = t.match(/^\+\+\+\s*(.+)$/))) { inToggle = true; out.push(`▸ **${m[1]}**（展開內容）`); return; }
+    if ((m = t.match(IMG_RE))) {
+      const p = parseSrc(m[2]);
+      if (['asset', 'mem', 'ex'].includes(p.type)) { imgs.push({p, cap: m[1], source: m[3] || '', sec}); out.push(`> 🖼️ **此處應貼上圖片${imgs.length}**\n> 圖說：${m[1]}\n> 來源：${m[3] || '—'}`); }
+      else out.push(`> 🖼️ （建議圖片，尚未放入）${m[1]}${p.type === 'web' ? `\n> 搜尋：${p.val}` : ''}`);
+      return;
+    }
+    out.push(inToggle && t ? '    ' + l.replace(/^\s*/, '') : l);
+  });
+  return out.join('\n');
+}
+async function exportZip() {
+  const note = t => { if ($('oNote')) $('oNote').textContent = t; };
+  note('整理中…');
+  const imgs = []; const kids = {}; B.nodes.forEach(n => { if (n.parent) (kids[n.parent] ||= []).push(n); });
+  let md = `# ${B.title}\n\n${B.summary ? '> 🔵 ' + B.summary + '\n\n' : ''}`;
+  const walk = (n, d) => (kids[n.id] || []).forEach(m => { md += `${'#'.repeat(Math.min(6, d + 2))} ${m.title}\n\n${mdForExport(m.md, imgs, m.title)}\n\n`; walk(m, d + 1); });
+  walk(rootOf(B), 0);
+  const loose = B.nodes.filter(n => !n.parent && n.kind !== 'root');
+  if (loose.length) { md += `## 其他卡片\n\n`; loose.forEach(n => md += `### ${n.title}\n\n${mdForExport(n.md, imgs, n.title)}\n\n`); }
+  if (B.edges.length) md += `## 概念關聯\n\n` + B.edges.map(e => `- ${nodeById(e.from)?.title} —${e.label || '關聯'}→ ${nodeById(e.to)?.title}`).join('\n') + '\n';
+  if (!downloads) { note(await saveFile('', md)); return; }
+  try {
+    const JSZip = await getZip(); const zip = new JSZip(), dir = `${safeName(B.title)}_圖片`; const list = [];
+    for (let i = 0; i < imgs.length; i++) {
+      const {p, cap, source, sec} = imgs[i]; let blob = null;
+      try { if (p.type === 'ex') blob = new Blob([decodeURIComponent(EX_IMG[p.val].split(',')[1])], {type: 'image/svg+xml'}); else blob = await (await fetch(imgURL(p))).blob(); } catch {}
+      if (!blob) continue;
+      const ext = /svg/.test(blob.type) ? 'svg' : /jpe?g/.test(blob.type) ? 'jpg' : 'png';
+      zip.file(`${dir}/圖片${i + 1}.${ext}`, blob); list.push(`圖片${i + 1}｜${sec}｜${cap}｜${source || '—'}`);
+    }
+    zip.file(`${dir}/圖片清單.txt`, list.join('\n')); zip.file(`${safeName(B.title)}.md`, md);
+    const blob = await zip.generateAsync({type: 'blob'});
+    note(await saveFile(`${safeName(B.title)}.zip`, blob) + ` 共 ${imgs.length} 張圖片。`);
+  } catch (e) { note('匯出失敗：' + (e?.message || e)); }
+}
+
+/* ================= example canvas ================= */
+const EX_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="800" height="480"><rect width="800" height="480" fill="#fff"/><rect x="170" y="80" width="460" height="320" rx="150" fill="#EAF3FB" stroke="#1F5FAD" stroke-width="10"/><rect x="185" y="95" width="430" height="290" rx="138" fill="#F7FBFF" stroke="#7FA7D6" stroke-width="3"/><path d="M300 240 q20 -40 40 0 t40 0 t40 0 t40 0" fill="none" stroke="#9A5806" stroke-width="5"/><circle cx="500" cy="195" r="20" fill="#0E7A6B"/><circle cx="500" cy="232" r="26" fill="#23A08C"/><text x="400" y="40" text-anchor="middle" font-family="sans-serif" font-size="22" font-weight="700" fill="#1B2430">抗生素的作用標靶（Antibiotic targets）</text><text x="30" y="110" font-family="sans-serif" font-size="17" fill="#1F5FAD">細胞壁 Cell wall</text><text x="30" y="132" font-family="sans-serif" font-size="15" fill="#465262">β-lactams、Vancomycin</text><line x1="185" y1="118" x2="205" y2="140" stroke="#1F5FAD" stroke-width="2"/><text x="620" y="190" font-family="sans-serif" font-size="17" fill="#0E7A6B">核糖體 Ribosome</text><text x="620" y="212" font-family="sans-serif" font-size="15" fill="#465262">30S：Aminoglycosides</text><text x="620" y="232" font-family="sans-serif" font-size="15" fill="#465262">50S：Macrolides</text><line x1="615" y1="205" x2="528" y2="215" stroke="#0E7A6B" stroke-width="2"/><text x="250" y="450" font-family="sans-serif" font-size="17" fill="#9A5806">DNA 複製／轉錄</text><text x="250" y="470" font-family="sans-serif" font-size="15" fill="#465262">Fluoroquinolones（DNA gyrase）、Rifampin</text><line x1="330" y1="432" x2="345" y2="255" stroke="#9A5806" stroke-width="2"/></svg>`;
+const EX_IMG = {targets: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(EX_SVG)};
+const EXAMPLE_META = {id: 'example', example: true, title: '抗生素（Antibiotics）', nodes: new Array(20), sections: new Array(4)};
+const EXAMPLE_LINES = [
+  {t:'meta',title:'抗生素（Antibiotics）',summary:'依作用標靶、化學結構分類，理解抗藥性機轉與臨床使用原則。'},
+  {t:'big',id:'B1',name:'作用機轉（Mechanism）',md:'> 🔵 快速記憶點\n- 細胞壁 → β-lactams、Vancomycin\n- 蛋白質合成 → 30S / 50S 核糖體\n- 核酸 → DNA gyrase、RNA polymerase\n![抗生素的主要作用標靶示意](ex:targets@800x480 "AI 繪製（範例）")'},
+  {t:'node',id:'m0',parent:'B1',kind:'category',title:'依作用標靶分類',md:'依抗生素「打在細菌的哪個構造」分成三大類。\n| 標靶 | 代表藥物 | 殺菌/抑菌 |\n|---|---|---|\n| 細胞壁 | β-lactams、Vancomycin | 殺菌 |\n| 核糖體 | Aminoglycosides、Macrolides | 多為抑菌（AG 例外） |\n| 核酸 | Fluoroquinolones、Rifampin | 殺菌 |'},
+  {t:'node',id:'m1',parent:'m0',kind:'concept',title:'抑制細胞壁合成',md:'- 干擾肽聚醣（peptidoglycan）交聯\n- **β-lactams**：結合青黴素結合蛋白（PBPs），抑制轉肽作用（transpeptidation）\n- **Vancomycin**：結合 D-Ala-D-Ala 末端\n> 🟢 人體細胞沒有細胞壁 → 選擇性高'},
+  {t:'node',id:'m2',parent:'m0',kind:'concept',title:'抑制蛋白質合成',md:'| 次單元 | 藥物 |\n|---|---|\n| 30S | Aminoglycosides、Tetracyclines |\n| 50S | Macrolides、Clindamycin、Linezolid |'},
+  {t:'node',id:'m3',parent:'m0',kind:'concept',title:'抑制核酸合成',md:'- **Fluoroquinolones**：抑制 DNA gyrase（topoisomerase II）與 topoisomerase IV\n- **Rifampin**：抑制 DNA-dependent RNA polymerase'},
+  {t:'big',id:'B2',name:'抗生素的種類（Classes）',md:'依**化學結構**分類；同一類藥物作用機轉與副作用相近。'},
+  {t:'node',id:'c1',parent:'B2',kind:'concept',title:'β-內醯胺類（β-lactams）',md:'- 結構含 β-lactam 環\n- 殺菌、時間依賴性（time-dependent）殺菌\n> 🔴 過敏反應最常見；不同 β-lactam 之間可能交叉過敏\n+++ 臨床藥理細節\n- 療效取決於 %T>MIC\n- 多數經腎排除，腎功能不全需調整劑量\n+++'},
+  {t:'node',id:'c11',parent:'c1',kind:'concept',title:'青黴素類（Penicillins）',md:'| 亞類 | 代表 |\n|---|---|\n| 天然 | Penicillin G、V |\n| 抗葡萄球菌 | Nafcillin、Oxacillin |\n| 胺基青黴素 | Ampicillin、Amoxicillin |\n| 抗綠膿桿菌 | Piperacillin |'},
+  {t:'node',id:'c12',parent:'c1',kind:'concept',title:'頭孢菌素類（Cephalosporins）',md:'- 第 1 代 Cefazolin：G(+) 為主\n- 第 3 代 Ceftriaxone：G(−)、可入 CNS；Ceftazidime：綠膿桿菌\n- 第 4 代 Cefepime：廣效\n- 第 5 代 Ceftaroline：可治 MRSA'},
+  {t:'node',id:'c13',parent:'c1',kind:'concept',title:'碳青黴烯類（Carbapenems）',md:'- Imipenem（併用 cilastatin）、Meropenem、Ertapenem\n- 最廣效的 β-lactam\n> 🟡 Ertapenem 對綠膿桿菌無效\n> 🔴 Imipenem 有誘發癲癇風險'},
+  {t:'node',id:'c2',parent:'B2',kind:'concept',title:'胺基醣苷類（Aminoglycosides）',md:'- Gentamicin、Tobramycin、Amikacin、Streptomycin\n- 結合 **30S**；濃度依賴性殺菌\n- 需氧氣才能進入菌體 → 對厭氧菌無效\n> 🔴 腎毒性、耳毒性、神經肌肉阻斷\n> 🟢 與 β-lactams 併用有協同作用'},
+  {t:'node',id:'c3',parent:'B2',kind:'concept',title:'巨環內酯類（Macrolides）',md:'- Azithromycin、Clarithromycin、Erythromycin\n- 結合 **50S**；常用於非典型肺炎病原\n> 🔴 QT 延長；Clarithromycin/Erythromycin 抑制 CYP3A4'},
+  {t:'node',id:'c4',parent:'B2',kind:'concept',title:'氟喹諾酮類（Fluoroquinolones）',md:'- Ciprofloxacin、Levofloxacin、Moxifloxacin\n> 🔴 肌腱炎／肌腱斷裂、QT 延長；一般避免用於兒童與孕婦'},
+  {t:'big',id:'B3',name:'抗藥性（Resistance）',md:'細菌逃避抗生素的四種主要策略。'},
+  {t:'node',id:'r1',parent:'B3',kind:'concept',title:'β-內醯胺酶（β-lactamase）',md:'- 水解 β-lactam 環使藥物失效\n- ESBL 可水解多數頭孢菌素\n![產 ESBL 細菌的培養或電子顯微鏡照片](web:ESBL producing bacteria electron micrograph)'},
+  {t:'node',id:'r2',parent:'B3',kind:'concept',title:'標靶改變',md:'- MRSA：*mecA* 基因 → PBP2a，對 β-lactams 親和力低'},
+  {t:'node',id:'r3',parent:'B3',kind:'concept',title:'排出幫浦與通透性下降',md:'- 排出幫浦（efflux pump）把藥物打出菌體\n- 孔蛋白（porin）減少 → 藥物進不去'},
+  {t:'big',id:'B4',name:'臨床使用原則',md:'```flow\n先採檢培養（culture）\n經驗性治療（empiric therapy）\n依培養與藥敏調整\n降階（de-escalation）或停藥\n```\n> 🟢 選藥時一併考慮過敏史、腎功能與感染部位'},
+  {t:'node',id:'q1',parent:'B4',kind:'question',title:'為什麼 Aminoglycosides 對厭氧菌無效？',md:'**答案要點**：它進入菌體需要氧氣依賴的主動運輸。\n- 厭氧環境下無法進入細胞內'},
+  {t:'rel',from:'c1',to:'m1',label:'作用於'},{t:'rel',from:'c2',to:'m2',label:'作用於 30S'},{t:'rel',from:'c3',to:'m2',label:'作用於 50S'},
+  {t:'rel',from:'c4',to:'m3',label:'作用於'},{t:'rel',from:'r1',to:'c1',label:'使其失效'},{t:'rel',from:'r2',to:'c1',label:'降低療效'},{t:'rel',from:'q1',to:'c2',label:'測驗'}
+];
+function buildExample() {
+  const keep = B; B = newBoard('抗生素'); B.id = 'example'; B.example = true; B.createdAt = 0;
+  const ctx = newCtx(); EXAMPLE_LINES.forEach(o => ingest(o, ctx)); B.nodes.forEach(n => { n.pending = false; });
+  const b = B; B = keep; return b;
+}
+
+/* ================= boot ================= */
+if (innerWidth <= 900) $('app').classList.remove('noside');
+openBoard(buildExample()); renderBoards();
+window.addEventListener('resize', () => { if (!userMoved) fit(); });
+(async () => {
+  const use = n => window.claude?.use?.(n) ?? Promise.resolve(null);
+  const [s, d, a] = await Promise.all([use('sample'), use('downloads'), use('assets')]).catch(() => [null, null, null]);
+  sample = s || null; downloads = d || null; assets = a || null;
+  if (sample) { imgLimits = await sample.limits().catch(() => null); }
+  $('file').accept = '.pdf,.pptx,.docx,.txt,.md,.markdown,.csv,.json,.html,.htm' + (imgLimits?.images ? ',' + imgLimits.images.mediaTypes.join(',') : '');
+  renderInsp();
+  await store.init(); await refreshBoards();
+  let last = null; try { last = localStorage.getItem('ccm-last-board'); } catch {}
+  const found = boards.find(x => x.id === last); if (found) openBoard(upgrade(JSON.parse(JSON.stringify(found))));
+})();
+})();
+</script>
