@@ -1,7 +1,7 @@
 /*
  * 獨立網站版的執行環境。
  *
- * 概念拆卡機原本是 Claude artifact，透過 window.claude.use(...) 取得 AI、資料庫、圖片儲存與下載功能。
+ * 經緯原本是 Claude artifact，透過 window.claude.use(...) 取得 AI、資料庫、圖片儲存與下載功能。
  * 這個檔案在一般網頁（例如 GitHub Pages）上提供同樣的介面：
  *   sample    → 用你自己的 Anthropic API 金鑰呼叫 Claude（官方 @anthropic-ai/sdk，瀏覽器直連）
  *   db / user → 存在這個瀏覽器的 IndexedDB
@@ -203,14 +203,14 @@
       const docs = {}; for (const k of await idb.keys('docs')) docs[k] = await idb.get('docs', k);
       const blobs = {};
       for (const k of await idb.keys('blobs')) { const b = await idb.get('blobs', k); blobs[k] = {type: b.type, data: await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(b); })}; }
-      await downloads.save({filename: `概念拆卡機備份-${new Date().toISOString().slice(0, 10)}.json`, data: JSON.stringify({app: 'concept-canvas', v: 1, docs, blobs})});
+      await downloads.save({filename: `經緯備份-${new Date().toISOString().slice(0, 10)}.json`, data: JSON.stringify({app: 'concept-canvas', v: 1, docs, blobs})});
       bmsg(`已下載：${Object.keys(docs).length} 張畫布、${Object.keys(blobs).length} 張圖片。`);
     };
     dlg.querySelector('#ccmImport').onclick = () => dlg.querySelector('#ccmImportFile').click();
     dlg.querySelector('#ccmImportFile').onchange = async e => {
       const f = e.target.files[0]; e.target.value = ''; if (!f) return;
       try {
-        const d = JSON.parse(await f.text()); if (d.app !== 'concept-canvas') throw new Error('不是概念拆卡機的備份檔');
+        const d = JSON.parse(await f.text()); if (d.app !== 'concept-canvas') throw new Error('不是經緯的備份檔');
         for (const [k, v] of Object.entries(d.docs || {})) await idb.put('docs', k, v);
         for (const [k, v] of Object.entries(d.blobs || {})) { const bin = Uint8Array.from(atob(v.data), c => c.charCodeAt(0)); await idb.put('blobs', k, new Blob([bin], {type: v.type})); }
         bmsg('已還原，重新整理頁面後生效。');

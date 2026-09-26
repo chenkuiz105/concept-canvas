@@ -7,7 +7,7 @@
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>概念拆卡機</title>
+<title>經緯</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&display=swap">
@@ -47,7 +47,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 a{color:var(--accent)}
 .app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr)}
 .top{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap;z-index:6}
-.brand{font-family:var(--serif);font-weight:700;font-size:18px;letter-spacing:.04em;margin:0;white-space:nowrap}
+.brand{font-family:var(--serif);font-weight:700;font-size:20px;letter-spacing:.12em;margin:0;white-space:nowrap}
+.brand-sub{font-family:var(--sans);font-weight:500;font-size:11px;letter-spacing:.08em;color:var(--muted);margin-left:8px}
 .cur-title{font-weight:500;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
 .btn{border:1px solid var(--line-2);background:var(--surface);border-radius:7px;padding:5px 10px;cursor:pointer;font-size:13px;display:inline-flex;align-items:center;gap:6px;justify-content:center;white-space:nowrap;text-decoration:none;color:var(--ink)}
 .btn:hover{border-color:var(--ink-2)}
@@ -238,7 +239,7 @@ dialog::backdrop{background:rgba(12,16,22,.55)}
 <div class="app" id="app">
   <header class="top">
     <button class="btn ghost sq" id="sideBtn" type="button" aria-label="顯示或隱藏畫布列表">☰</button>
-    <h1 class="brand">概念拆卡機</h1>
+    <h1 class="brand">經緯<small class="brand-sub">知識畫布</small></h1>
     <span class="cur-title" id="curTitle"></span>
     <div class="search"><input type="search" id="q" placeholder="搜尋卡片內容…" aria-label="搜尋卡片"></div>
     <span class="saved" id="saved"></span>
@@ -279,7 +280,7 @@ dialog::backdrop{background:rgba(12,16,22,.55)}
   <form class="dlg" id="newForm" method="dialog">
     <h2>把資料拆成圖文知識畫布</h2>
     <ul class="rules">
-      <li>先列出資料中的<b>每一個知識點</b>，再建立「大概念 → 分類 → 小概念 → 細節」的樹；同層概念一律並列，不會串成上下級。</li>
+      <li>先列出資料中的<b>每一個知識點</b>，再由上而下建立「大概念 → 分類 → 小概念 → 細節」的樹；同層概念一律左右並列，不會串成上下級。</li>
       <li>每張卡依內容選擇最適合的呈現：條列短句、表格、摺疊的詳細機制、重點色塊、流程或圖片；專有名詞中英對照。</li>
       <li>圖片依序：① 從你的檔案擷取 → ② 需要真實影像時提供網路搜尋 → ③ AI 繪製示意圖。</li>
       <li>最後逐一核對知識點，把遺漏的補成新卡。</li>
@@ -329,7 +330,7 @@ const vp = $('vp'), world = $('world'), svg = $('edges');
 
 function newBoard(title) {
   const root = {id: 'n' + uid(), kind: 'root', title: title || '新畫布', md: '', sec: null, parent: null, x: 0, y: 0, w: W_OF('root')};
-  return {id: 'b' + Date.now(), kind: 'board', v: 3, title: root.title, summary: '', createdAt: Date.now(), excerpt: '', kps: [], figures: [], sections: [], nodes: [root], edges: []};
+  return {id: 'b' + Date.now(), kind: 'board', v: 3, layout: 'tb', title: root.title, summary: '', createdAt: Date.now(), excerpt: '', kps: [], figures: [], sections: [], nodes: [root], edges: []};
 }
 function upgrade(b) { // boards made by the previous version stored plain `body`
   b.kps ||= []; b.figures ||= []; b.sections ||= []; b.edges ||= [];
@@ -513,8 +514,8 @@ function anchors(a, b) {
     m: {x: .125 * p1.x + .375 * c1.x + .375 * c2.x + .125 * p2.x, y: .125 * p1.y + .375 * c1.y + .375 * c2.y + .125 * p2.y}};
 }
 function hierPath(a, c) {
-  // parent's right edge fans out to each child's left edge: siblings each get their own line from the parent
-  if (c.x >= a.x + a.w - 4) { const x1 = a.x + a.w, y1 = a.y + Math.min(a.h / 2, 40), x2 = c.x, y2 = c.y + Math.min(c.h / 2, 40), mx = x1 + (x2 - x1) / 2; return `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`; }
+  // parent's bottom edge fans out to each child's top edge: siblings each get their own line from the parent
+  if (c.y >= a.y + a.h - 4) { const x1 = a.x + a.w / 2, y1 = a.y + a.h, x2 = c.x + c.w / 2, y2 = c.y, my = y1 + (y2 - y1) / 2; return `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`; }
   return anchors(a, c).d;
 }
 let tmpLine = '', newEdges = new Set();
@@ -547,29 +548,31 @@ let raf = 0;
 function redraw() { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; renderSecs(); renderEdges(); }); }
 function renderAll() { renderNodes(); renderSecs(); renderEdges(); renderInsp(); $('curTitle').textContent = (B.example ? '範例：' : '') + B.title; renderBoards(); }
 
-/* ================= auto layout: one left-to-right tree ================= */
+/* ================= auto layout: one top-down tree ================= */
 function autoLayout() {
   const wasFar = world.classList.contains('far'); world.classList.remove('far');
   B.nodes.forEach(renderNode);
   const kids = {}; B.nodes.forEach(n => { if (n.parent && nodeById(n.parent)) (kids[n.parent] ||= []).push(n); });
-  const root = rootOf(B), GX = 110, GY = 22, SG = 170;
-  const sh = {};
-  const subH = n => { const ks = kids[n.id] || []; const s = ks.reduce((a, k) => a + subH(k), 0) + Math.max(0, ks.length - 1) * GY; return sh[n.id] = Math.max(hOf(n), s); };
-  const widths = (n, d, arr) => { arr[d] = Math.max(arr[d] || 0, n.w); (kids[n.id] || []).forEach(k => widths(k, d + 1, arr)); return arr; };
-  const place = (n, d, top, colX) => {
-    n.x = colX[d]; n.y = top + (sh[n.id] - hOf(n)) / 2;
-    const ks = kids[n.id] || []; const s = ks.reduce((a, k) => a + sh[k.id], 0) + Math.max(0, ks.length - 1) * GY;
-    let t = top + (sh[n.id] - s) / 2; ks.forEach(k => { place(k, d + 1, t, colX); t += sh[k.id] + GY; });
+  const root = rootOf(B), GX = 40, GY = 100, SG = 150;
+  // each subtree is as wide as its children side by side; a parent sits centred above them
+  const sw = {};
+  const subW = n => { const ks = kids[n.id] || []; const s = ks.reduce((a, k) => a + subW(k), 0) + Math.max(0, ks.length - 1) * GX; return sw[n.id] = Math.max(n.w, s); };
+  const heights = (n, d, arr) => { arr[d] = Math.max(arr[d] || 0, hOf(n)); (kids[n.id] || []).forEach(k => heights(k, d + 1, arr)); return arr; };
+  const place = (n, d, left, rowY) => {
+    n.x = left + (sw[n.id] - n.w) / 2; n.y = rowY[d];
+    const ks = kids[n.id] || []; const s = ks.reduce((a, k) => a + sw[k.id], 0) + Math.max(0, ks.length - 1) * GX;
+    let l = left + (sw[n.id] - s) / 2; ks.forEach(k => { place(k, d + 1, l, rowY); l += sw[k.id] + GX; });
   };
-  const x0 = root.w + 170; let y = 0;
-  const trunks = kids[root.id] || [];
-  trunks.forEach(t => {
-    const arr = widths(t, 0, []), colX = [x0]; for (let d = 1; d < arr.length; d++) colX[d] = colX[d - 1] + arr[d - 1] + GX;
-    subH(t); place(t, 0, y, colX); y += sh[t.id] + SG;
+  const y0 = hOf(root) + 200; let x = 0, bottom = y0;
+  (kids[root.id] || []).forEach(t => {
+    subW(t); const hs = heights(t, 0, []), rowY = [y0];
+    for (let d = 1; d < hs.length; d++) rowY[d] = rowY[d - 1] + hs[d - 1] + GY;
+    place(t, 0, x, rowY); x += sw[t.id] + SG; bottom = Math.max(bottom, rowY[hs.length - 1] + hs[hs.length - 1]);
   });
-  const totalH = Math.max(0, y - SG);
-  root.x = 0; root.y = Math.max(0, totalH / 2 - hOf(root) / 2);
-  let lx = x0; B.nodes.filter(n => !n.parent && n.kind !== 'root' && !isFinite(n.x)).forEach(n => { n.x = lx; n.y = totalH + 120; lx += n.w + 30; });
+  const totalW = Math.max(root.w, x - SG);
+  root.x = totalW / 2 - root.w / 2; root.y = 0;
+  let lx = 0; B.nodes.filter(n => !n.parent && n.kind !== 'root' && !isFinite(n.x)).forEach(n => { n.x = lx; n.y = bottom + 140; lx += n.w + 30; });
+  B.layout = 'tb';
   if (wasFar) world.classList.add('far');
   renderNodes(); renderSecs(); renderEdges();
 }
@@ -941,8 +944,8 @@ function openBoard(b) {
   if (b !== B && !busy) SRC = '';
   B = b; sel = null; userMoved = false; newEdges = new Set();
   for (const [, el] of els) el.remove(); els.clear();
-  const needLayout = B.nodes.some(n => !isFinite(n.x) || n.x == null);
-  renderAll(); if (needLayout) autoLayout(); fit();
+  const needLayout = B.nodes.some(n => !isFinite(n.x) || n.x == null) || B.layout !== 'tb'; // boards from older versions were laid out left-to-right
+  renderAll(); if (needLayout) { autoLayout(); if (!B.example && !busy) dirty(); } fit();
   try { localStorage.setItem('ccm-last-board', B.id); } catch {}
   flashSaved(B.example ? '範例' : '');
 }
